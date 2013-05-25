@@ -63,6 +63,12 @@ namespace MmixLlvm {
 
 		extern llvm::BasicBlock* emitLdbi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
 			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
+
+		extern llvm::BasicBlock* emitLdht(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
+			uint8_t xarg, uint8_t yarg, uint8_t zarg);
+
+		extern llvm::BasicBlock* emitLdhti(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
+			uint8_t xarg, uint8_t yarg, uint8_t zarg);
 	};
 
 	typedef std::vector<uint64_t> EdgeList;

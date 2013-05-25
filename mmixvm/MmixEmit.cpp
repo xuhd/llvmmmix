@@ -101,6 +101,12 @@ namespace {
 		case MmixLlvm::LDBUI:
 			retVal = emitLdbi(ctx, m, f, regMap, xarg, yarg, zarg, false);
 			break;
+		case MmixLlvm::LDHT:
+			retVal = emitLdht(ctx, m, f, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::LDHTI:
+			retVal = emitLdhti(ctx, m, f, regMap, xarg, yarg, zarg);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}

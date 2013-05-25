@@ -185,7 +185,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 	uint8_t *textSegPhys = new uint8_t[TEXT_SIZE];
 	memset(textSegPhys, 0, sizeof(*textSegPhys) * TEXT_SIZE);
-	textSegPhys[0x100] = MmixLlvm::LDWI;
+	textSegPhys[0x100] = MmixLlvm::LDHTI;
 	textSegPhys[0x101] = 0;
 	textSegPhys[0x102] = 1;
 	//textSegPhys[0x103] = 2;
