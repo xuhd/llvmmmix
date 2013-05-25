@@ -9,6 +9,7 @@
 
 #include <tchar.h>
 #include <stdint.h>
+#include <limits.h>
 #include <vector>
 #include <boost/tuple/tuple.hpp>
 #include <boost/scoped_ptr.hpp>

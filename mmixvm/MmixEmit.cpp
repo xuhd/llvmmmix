@@ -113,6 +113,48 @@ namespace {
 		case MmixLlvm::STOI:
 			retVal = emitStoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
 			break;
+		case MmixLlvm::STT:
+			retVal = emitStt(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STTI:
+			retVal = emitStti(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STW:
+			retVal = emitStw(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STWI:
+			retVal = emitStwi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STB:
+			retVal = emitStb(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STBI:
+			retVal = emitStbi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STOU:
+			retVal = emitSto(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STTU:
+			retVal = emitSttu(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STWU:
+			retVal = emitStwu(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STBU:
+			retVal = emitStbu(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STOUI:
+			retVal = emitStoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STTUI:
+			retVal = emitSttui(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STWUI:
+			retVal = emitStwui(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STBUI:
+			retVal = emitStbui(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}
