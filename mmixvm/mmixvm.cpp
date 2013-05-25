@@ -18,6 +18,11 @@ enum {
 using namespace llvm;
 
 namespace {
+	void HandleOverflow() {
+		outs() << "Overflow !!!\n\n";
+		outs().flush();
+	}
+
 	class MemAccessImpl : public MmixLlvm::MemAccessor {
 		const llvm::ArrayRef<uint8_t> _textRef;
 
@@ -175,7 +180,19 @@ int _tmain(int argc, _TCHAR* argv[])
 		"StackSeg");
 	stackGlob->setAlignment(8);
 
-	boost::scoped_ptr<ExecutionEngine> EE(EngineBuilder(M).create());	
+	//GlobalVariable* HandleOverflowRef = new GlobalVariable(*M,
+	//	FunctionType::get(Type::getVoidTy(Context), false),
+	//	false,
+	//	GlobalValue::CommonLinkage,
+	//	0,
+//		"HandleOverflow");
+	
+	llvm::Function* handleOverflowRef = llvm::Function::Create(
+		FunctionType::get(Type::getVoidTy(Context), false), 
+		Function::ExternalLinkage, "HandleOverflow", M);
+
+	boost::scoped_ptr<ExecutionEngine> EE(EngineBuilder(M).create());
+	EE->addGlobalMapping(handleOverflowRef, &HandleOverflow);
 	uint64_t *arr;
 	arr = new uint64_t[GENERIC_REGISTERS];
 	memset(arr, 0, sizeof(*arr) * GENERIC_REGISTERS);
@@ -189,7 +206,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	textSegPhys[0x101] = 0;
 	textSegPhys[0x102] = 1;
 	textSegPhys[0x103] = 2;
-	textSegPhys[0x104] = MmixLlvm::STTI;
+	textSegPhys[0x104] = MmixLlvm::STWI;
 	textSegPhys[0x105] = 0;
 	textSegPhys[0x106] = 1;
 	textSegPhys[0x107] = 50;
@@ -200,7 +217,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	dataSegPhys[32] = 0;
 	dataSegPhys[33] = 0;
 	dataSegPhys[34] = 0;
-	dataSegPhys[35] = 1;
+	dataSegPhys[35] = 0;
 	dataSegPhys[36] = 5;
 	dataSegPhys[37] = 6;
 	dataSegPhys[38] = 7;
