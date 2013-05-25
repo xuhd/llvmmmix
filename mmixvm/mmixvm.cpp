@@ -180,16 +180,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	arr = new uint64_t[GENERIC_REGISTERS];
 	memset(arr, 0, sizeof(*arr) * GENERIC_REGISTERS);
 	arr[1] = MmixLlvm::DATA_SEG;
-	//arr[2] = 32;
+	arr[2] = 32;
 	EE->addGlobalMapping(registersGlob, arr);
 	
 	uint8_t *textSegPhys = new uint8_t[TEXT_SIZE];
 	memset(textSegPhys, 0, sizeof(*textSegPhys) * TEXT_SIZE);
-	textSegPhys[0x100] = MmixLlvm::LDHTI;
+	textSegPhys[0x100] = MmixLlvm::LDHT;
 	textSegPhys[0x101] = 0;
 	textSegPhys[0x102] = 1;
-	//textSegPhys[0x103] = 2;
-	textSegPhys[0x103] = 32;
+	textSegPhys[0x103] = 2;
+	textSegPhys[0x104] = MmixLlvm::STOI;
+	textSegPhys[0x105] = 0;
+	textSegPhys[0x106] = 1;
+	textSegPhys[0x107] = 50;
 	EE->addGlobalMapping(textGlob, textSegPhys);
 
 	uint8_t *dataSegPhys = new uint8_t[HEAP_SIZE];

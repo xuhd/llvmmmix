@@ -22,10 +22,10 @@ using MmixLlvm::MemAccessor;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
 
-BasicBlock* MmixLlvm::Private::emitLdo(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-	uint8_t xarg, uint8_t yarg, uint8_t zarg)
+BasicBlock* MmixLlvm::Private::emitLdo(LLVMContext& ctx, Module& m, Function& f, 
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -43,10 +43,10 @@ BasicBlock* MmixLlvm::Private::emitLdo(LLVMContext& ctx, llvm::Module& m, llvm::
 	return epilogue;
 }
 
-BasicBlock* MmixLlvm::Private::emitLdt(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-	uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+BasicBlock* MmixLlvm::Private::emitLdt(LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -64,10 +64,10 @@ BasicBlock* MmixLlvm::Private::emitLdt(LLVMContext& ctx, llvm::Module& m, llvm::
 	return epilogue;
 }
 
-BasicBlock* MmixLlvm::Private::emitLdw(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-	uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+BasicBlock* MmixLlvm::Private::emitLdw(LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -85,10 +85,10 @@ BasicBlock* MmixLlvm::Private::emitLdw(LLVMContext& ctx, llvm::Module& m, llvm::
 	return epilogue;
 }
 
-BasicBlock* MmixLlvm::Private::emitLdb(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-	uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+BasicBlock* MmixLlvm::Private::emitLdb(LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -106,10 +106,10 @@ BasicBlock* MmixLlvm::Private::emitLdb(LLVMContext& ctx, llvm::Module& m, llvm::
 	return epilogue;
 }
 
-BasicBlock* MmixLlvm::Private::emitLdoi(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-	uint8_t xarg, uint8_t yarg, uint8_t zarg)
+BasicBlock* MmixLlvm::Private::emitLdoi(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, 
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -127,10 +127,10 @@ BasicBlock* MmixLlvm::Private::emitLdoi(LLVMContext& ctx, llvm::Module& m, llvm:
 	return epilogue;
 }
 
-BasicBlock* MmixLlvm::Private::emitLdti(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-	uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+BasicBlock* MmixLlvm::Private::emitLdti(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, 
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -148,10 +148,10 @@ BasicBlock* MmixLlvm::Private::emitLdti(LLVMContext& ctx, llvm::Module& m, llvm:
 	return epilogue;
 }
 
-BasicBlock* MmixLlvm::Private::emitLdwi(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-	uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+BasicBlock* MmixLlvm::Private::emitLdwi(LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -169,10 +169,10 @@ BasicBlock* MmixLlvm::Private::emitLdwi(LLVMContext& ctx, llvm::Module& m, llvm:
 	return epilogue;
 }
 
-BasicBlock* MmixLlvm::Private::emitLdbi(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-	uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+BasicBlock* MmixLlvm::Private::emitLdbi(LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -190,10 +190,10 @@ BasicBlock* MmixLlvm::Private::emitLdbi(LLVMContext& ctx, llvm::Module& m, llvm:
 	return epilogue;
 }
 
-llvm::BasicBlock* MmixLlvm::Private::emitLdht(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg)
+llvm::BasicBlock* MmixLlvm::Private::emitLdht(LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);
@@ -212,10 +212,10 @@ llvm::BasicBlock* MmixLlvm::Private::emitLdht(LLVMContext& ctx, llvm::Module& m,
 	return epilogue;
 }
 
-llvm::BasicBlock* MmixLlvm::Private::emitLdhti(LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg)
+llvm::BasicBlock* MmixLlvm::Private::emitLdhti(LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	BasicBlock *entryBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(entryBlock);

@@ -45,7 +45,7 @@ namespace {
 	}
 
 	BasicBlock* emitInstruction(llvm::LLVMContext& ctx, llvm::Module& m, Function& f,
-		uint32_t instr, uint64_t xPtr, RegistersMap& regMap)
+		uint32_t instr, llvm::BasicBlock *cp, uint64_t xPtr, RegistersMap& regMap)
 	{
 		BasicBlock* retVal = 0;
 		uint8_t o0 = (uint8_t) (instr >> 24);
@@ -54,58 +54,64 @@ namespace {
 		uint8_t zarg = (uint8_t) (instr & 0xff);
 		switch(o0) {
 		case MmixLlvm::LDO:
-			retVal = emitLdo(ctx, m, f, regMap, xarg, yarg, zarg);
+			retVal = emitLdo(ctx, m, f, cp, regMap, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDOI:
-			retVal = emitLdoi(ctx, m, f, regMap, xarg, yarg, zarg);
+			retVal = emitLdoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDT:
-			retVal = emitLdt(ctx, m, f, regMap, xarg, yarg, zarg, true);
+			retVal = emitLdt(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDTI:
-			retVal = emitLdti(ctx, m, f, regMap, xarg, yarg, zarg, true);
+			retVal = emitLdti(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDW:
-			retVal = emitLdw(ctx, m, f, regMap, xarg, yarg, zarg, true);
+			retVal = emitLdw(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDWI:
-			retVal = emitLdwi(ctx, m, f, regMap, xarg, yarg, zarg, true);
+			retVal = emitLdwi(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDB:
-			retVal = emitLdb(ctx, m, f, regMap, xarg, yarg, zarg, true);
+			retVal = emitLdb(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDBI:
-			retVal = emitLdbi(ctx, m, f, regMap, xarg, yarg, zarg, true);
+			retVal = emitLdbi(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDOU:
-			retVal = emitLdo(ctx, m, f, regMap, xarg, yarg, zarg);
+			retVal = emitLdo(ctx, m, f, cp, regMap, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDOUI:
-			retVal = emitLdoi(ctx, m, f, regMap, xarg, yarg, zarg);
+			retVal = emitLdoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDTU:
-			retVal = emitLdt(ctx, m, f, regMap, xarg, yarg, zarg, false);
+			retVal = emitLdt(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDTUI:
-			retVal = emitLdti(ctx, m, f, regMap, xarg, yarg, zarg, false);
+			retVal = emitLdti(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDWU:
-			retVal = emitLdw(ctx, m, f, regMap, xarg, yarg, zarg, false);
+			retVal = emitLdw(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDWUI:
-			retVal = emitLdwi(ctx, m, f, regMap, xarg, yarg, zarg, false);
+			retVal = emitLdwi(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDBU:
-			retVal = emitLdb(ctx, m, f, regMap, xarg, yarg, zarg, false);
+			retVal = emitLdb(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDBUI:
-			retVal = emitLdbi(ctx, m, f, regMap, xarg, yarg, zarg, false);
+			retVal = emitLdbi(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDHT:
-			retVal = emitLdht(ctx, m, f, regMap, xarg, yarg, zarg);
+			retVal = emitLdht(ctx, m, f, cp, regMap, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDHTI:
-			retVal = emitLdhti(ctx, m, f, regMap, xarg, yarg, zarg);
+			retVal = emitLdhti(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STO:
+			retVal = emitSto(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STOI:
+			retVal = emitStoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
 			break;
 		default:
 			assert(0 && "Not implemented");
@@ -118,16 +124,16 @@ boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, 
 {
 	RegistersMap regMap;
 	uint64_t xPtr0 = xPtr;
-	BasicBlock* bb = 0;
 	Function* f = cast<Function>(m.getOrInsertFunction(genUniq("fun").str(), Type::getVoidTy(ctx) , (Type *)0));
+	llvm::BasicBlock *connectionPoint = 0;
 	for (;;) {
 		uint32_t instr = ma.readTetra(xPtr0);
 		if (isTerm(instr))
 			break;
-		bb = emitInstruction(ctx, m, *f, instr, xPtr, regMap);
+		connectionPoint = emitInstruction(ctx, m, *f, instr, connectionPoint, xPtr, regMap);
 		xPtr0 += sizeof(uint32_t);
 	}
-	if (bb)
-		emitEpilogue(ctx, m, *f, *bb, regMap);
+	if (connectionPoint)
+		emitEpilogue(ctx, m, *f, *connectionPoint, regMap);
 	return boost::make_tuple(f, EdgeList());
 }

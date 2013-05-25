@@ -71,7 +71,7 @@ Value* MmixLlvm::Private::emitRegisterLoad(llvm::LLVMContext& ctx, IRBuilder<>& 
 		ix[1] = builder.getInt32(reg);
 		retVal = builder.CreateLoad(
 			builder.CreatePointerCast(
-			builder.CreateGEP(regGlob, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
+			builder.CreateGEP(regGlob, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)), false, llvm::Twine("reg")+llvm::Twine(reg));
 		RegisterRecord r0;
 		r0.value = retVal;
 		r0.changed = false;
@@ -156,3 +156,31 @@ Value* MmixLlvm::Private::emitFetchMem(llvm::LLVMContext& ctx, llvm::Module& m, 
 	builder.CreateBr(exit);
 	return retVal;
 }
+
+void MmixLlvm::Private::emitStoreMem(LLVMContext& ctx, Module& m, Function& f,
+	IRBuilder<>& builder, Value* theA, Value* val, BasicBlock* exit)
+{
+	BasicBlock *writeTextBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *writeDataBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *writePoolBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	BasicBlock *writeStackBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
+	SwitchInst *switchInst = builder.CreateSwitch(builder.CreateLShr(theA, 61), writeTextBlock, 4);
+	(*switchInst).addCase(builder.getInt64(0), writeTextBlock);
+	(*switchInst).addCase(builder.getInt64(1), writeDataBlock);
+	(*switchInst).addCase(builder.getInt64(2), writePoolBlock);
+	(*switchInst).addCase(builder.getInt64(3), writeStackBlock);
+	Value* theValue;
+	builder.SetInsertPoint(writeTextBlock);
+	theValue = builder.CreateStore(val, emitGetTextPtr(ctx, m, builder, theA, (*(*val).getType()).getPointerTo()));
+	builder.CreateBr(exit);
+	builder.SetInsertPoint(writeDataBlock);
+	theValue = builder.CreateStore(val, emitGetDataPtr(ctx, m, builder, theA, (*(*val).getType()).getPointerTo()));
+	builder.CreateBr(exit);
+	builder.SetInsertPoint(writePoolBlock);
+	theValue = builder.CreateStore(val, emitGetPoolPtr(ctx, m, builder, theA, (*(*val).getType()).getPointerTo()));
+	builder.CreateBr(exit);
+	builder.SetInsertPoint(writeStackBlock);
+	theValue = builder.CreateStore(val, emitGetStackPtr(ctx, m, builder, theA, (*(*val).getType()).getPointerTo()));
+	builder.CreateBr(exit);
+}
+

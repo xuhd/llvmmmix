@@ -40,35 +40,44 @@ namespace MmixLlvm {
 		extern llvm::Value* emitFetchMem(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
 			llvm::IRBuilder<>& builder, llvm::Value* theA, llvm::Type* ty, llvm::BasicBlock* exit);
 
-		extern llvm::BasicBlock* emitLdo(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg);
+		extern void emitStoreMem(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::IRBuilder<>& builder, llvm::Value* theA, llvm::Value* val, llvm::BasicBlock* exit);
 
-		extern llvm::BasicBlock* emitLdt(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
+		extern llvm::BasicBlock* emitLdo(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 
-		extern llvm::BasicBlock* emitLdw(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
+		extern llvm::BasicBlock* emitLdt(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
 
-		extern llvm::BasicBlock* emitLdb(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
+		extern llvm::BasicBlock* emitLdw(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
 
-		extern llvm::BasicBlock* emitLdoi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg);
+		extern llvm::BasicBlock* emitLdb(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
 
-		extern llvm::BasicBlock* emitLdti(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
+		extern llvm::BasicBlock* emitLdoi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 
-		extern llvm::BasicBlock* emitLdwi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
+		extern llvm::BasicBlock* emitLdti(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
 
-		extern llvm::BasicBlock* emitLdbi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
+		extern llvm::BasicBlock* emitLdwi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, 
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
 
-		extern llvm::BasicBlock* emitLdht(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg);
+		extern llvm::BasicBlock* emitLdbi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned);
 
-		extern llvm::BasicBlock* emitLdhti(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f, RegistersMap& regMap,
-			uint8_t xarg, uint8_t yarg, uint8_t zarg);
+		extern llvm::BasicBlock* emitLdht(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg);
+
+		extern llvm::BasicBlock* emitLdhti(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg);
+
+		extern llvm::BasicBlock* emitSto(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg);
+
+		extern llvm::BasicBlock* emitStoi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+			llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 	};
 
 	typedef std::vector<uint64_t> EdgeList;
