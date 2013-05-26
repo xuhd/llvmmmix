@@ -206,8 +206,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	textSegPhys[0x101] = 0;
 	textSegPhys[0x102] = 1;
 	textSegPhys[0x103] = 2;
-	textSegPhys[0x104] = MmixLlvm::STHTI;
-	textSegPhys[0x105] = 0;
+	textSegPhys[0x104] = MmixLlvm::STCOI;
+	textSegPhys[0x105] = 33;
 	textSegPhys[0x106] = 1;
 	textSegPhys[0x107] = 50;
 	EE->addGlobalMapping(textGlob, textSegPhys);

@@ -37,6 +37,8 @@ namespace {
 			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
 		static BasicBlock* emitht(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
 			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
+		static BasicBlock* emitco(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
+			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
 	};
 
 	BasicBlock* EmitS<3>::emit(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
@@ -104,6 +106,24 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, builder.CreateLShr(xVal, builder.getInt64(32)), false);
+		emitStoreMem(ctx, m, f, builder, theA, adjustEndianness(builder, valToStore), epilogue);
+		builder.SetInsertPoint(epilogue);
+		return epilogue;
+	}
+
+	template<> BasicBlock* EmitS<3>::emitco(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
+		RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	{
+		BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
+		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
+		IRBuilder<> builder(ctx);
+		builder.SetInsertPoint(entryBlock);
+		Value *registers = m.getGlobalVariable("Registers");
+		Value* xVal = builder.getInt64(xarg);
+		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
+		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
+		Value* theA = makeA(ctx, builder, yVal, zVal);
+		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
 		emitStoreMem(ctx, m, f, builder, theA, adjustEndianness(builder, valToStore), epilogue);
 		builder.SetInsertPoint(epilogue);
 		return epilogue;
@@ -255,3 +275,16 @@ BasicBlock* MmixLlvm::Private::emitSthti(LLVMContext& ctx, Module& m, Function& 
 {
 	return EmitS<2>::emitht(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
 }
+
+BasicBlock* MmixLlvm::Private::emitStco(LLVMContext& ctx, Module& m, Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+{
+	return EmitS<3>::emitco(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+}
+
+BasicBlock* MmixLlvm::Private::emitStcoi(LLVMContext& ctx, Module& m, Function& f,
+	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+{
+	return EmitS<3>::emitco(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+}
+
