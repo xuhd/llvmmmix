@@ -21,6 +21,10 @@ using namespace MmixLlvm::Private;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
 
+namespace {
+	const uint64_t ADDR_MASK = ~(3i64 << 61);
+};
+
 Value* MmixLlvm::Private::emitAdjust64Endianness(IRBuilder<>& builder, Value* val) {
 	Value* b0 = builder.CreateLShr(val, builder.getInt64(56));
 	Value* b1 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(48)), builder.getInt64(0xFF));
@@ -95,7 +99,7 @@ Value* MmixLlvm::Private::emitGetDataPtr(LLVMContext& ctx, Module& m, IRBuilder<
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
 	ix[1] = builder.CreateIntCast(
-		builder.CreateSub(theA, builder.getInt64(MmixLlvm::DATA_SEG)),
+		builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)),
 		Type::getInt32Ty(ctx), false);
 	return builder.CreatePointerCast(
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), ty);
@@ -106,7 +110,7 @@ Value* MmixLlvm::Private::emitGetPoolPtr(LLVMContext& ctx, Module& m, IRBuilder<
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
 	ix[1] = builder.CreateIntCast(
-		builder.CreateSub(theA, builder.getInt64(MmixLlvm::POOL_SEG)),
+		builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)),
 		Type::getInt32Ty(ctx), false);
 	return builder.CreatePointerCast(
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), ty);
@@ -117,7 +121,7 @@ Value* MmixLlvm::Private::emitGetStackPtr(LLVMContext& ctx, Module& m, IRBuilder
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
 	ix[1] = builder.CreateIntCast(
-		builder.CreateSub(theA, builder.getInt64(MmixLlvm::STACK_SEG)),
+		builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)),
 		Type::getInt32Ty(ctx), false);
 	return builder.CreatePointerCast(
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), ty);

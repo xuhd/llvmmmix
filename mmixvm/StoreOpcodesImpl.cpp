@@ -29,102 +29,97 @@ namespace {
 		static Value* adjustEndianness(IRBuilder<>& builder, Value* val);
 		static Value* createStoreCast(LLVMContext& ctx, IRBuilder<>& builder, Value* val, int isSigned);
 	public:
-		static BasicBlock* emit(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
-		static BasicBlock* emitu(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
-		static BasicBlock* emitht(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
-		static BasicBlock* emitco(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
+		static void emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
+		static void emitu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
+		static void emitht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
+		static void emitco(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
 	};
 
-	BasicBlock* EmitS<3>::emit(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-		RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	void EmitS<3>::emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 	{
-		return emitu(ctx, m, f, entry, regMap, xarg, yarg, zarg, immediate);
+		emitu(vctx, xarg, yarg, zarg, immediate);
 	}
 
-	template<int Pow2> BasicBlock* EmitS<Pow2>::emit(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	template<int Pow2> void EmitS<Pow2>::emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 	{
-		BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
-		BasicBlock *boundsChecked = BasicBlock::Create(ctx, genUniq("block"), &f);
-		BasicBlock *boundsCheckFailed = BasicBlock::Create(ctx, genUniq("block"), &f);
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
+		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(entryBlock);
-		Value *registers = m.getGlobalVariable("Registers");
+		builder.SetInsertPoint(vctx.Entry);
+		RegistersMap& regMap = *vctx.RegMap;
+		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
 		Value* xVal = emitRegisterLoad(ctx, builder, registers, regMap, xarg);
 		Value* loBoundCk = builder.CreateICmpSGE(xVal, builder.getInt64(LoBound));
 		Value* hiBoundCk = builder.CreateICmpSLE(xVal, builder.getInt64(HiBound));
+		BasicBlock *boundsChecked = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
+		BasicBlock *boundsCheckFailed = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
+		BasicBlock *exit0 = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
 		builder.CreateCondBr(builder.CreateAnd(loBoundCk, hiBoundCk), boundsChecked, boundsCheckFailed);
 		builder.SetInsertPoint(boundsChecked);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, true);
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
-		emitStoreMem(ctx, m, f, builder, theA, adjustEndianness(builder, valToStore), epilogue);
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore), exit0);
 		builder.SetInsertPoint(boundsCheckFailed);
-		Function* h = m.getFunction("HandleOverflow");
+		Function* h = (*vctx.Module).getFunction("HandleOverflow");
 		builder.CreateCall(h);
-		builder.CreateBr(epilogue);
-		builder.SetInsertPoint(epilogue);
-		return epilogue;
+		builder.CreateBr(exit0);
+		builder.SetInsertPoint(exit0);
+		builder.CreateBr(vctx.Exit);
 	}
 
-	template<int Pow2> BasicBlock* EmitS<Pow2>::emitu(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-			RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	template<int Pow2> void EmitS<Pow2>::emitu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 	{
-		BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
+		LLVMContext& ctx = *vctx.Ctx;
+		RegistersMap& regMap = *vctx.RegMap; 
 		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(entryBlock);
-		Value *registers = m.getGlobalVariable("Registers");
+		builder.SetInsertPoint(vctx.Entry);
+		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
 		Value* xVal = emitRegisterLoad(ctx, builder, registers, regMap, xarg);
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
-		emitStoreMem(ctx, m, f, builder, theA, adjustEndianness(builder, valToStore), epilogue);
-		builder.SetInsertPoint(epilogue);
-		return epilogue;
+		BasicBlock *exit0 = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore), exit0);
+		builder.SetInsertPoint(exit0);
+		builder.CreateBr(vctx.Exit);
 	}
 
-	template<> BasicBlock* EmitS<2>::emitht(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-		RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	template<> void EmitS<2>::emitht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 	{
-		BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
+		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(entryBlock);
-		Value *registers = m.getGlobalVariable("Registers");
+		builder.SetInsertPoint(vctx.Entry);
+		RegistersMap& regMap = *vctx.RegMap;
+		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
 		Value* xVal = emitRegisterLoad(ctx, builder, registers, regMap, xarg);
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, builder.CreateLShr(xVal, builder.getInt64(32)), false);
-		emitStoreMem(ctx, m, f, builder, theA, adjustEndianness(builder, valToStore), epilogue);
-		builder.SetInsertPoint(epilogue);
-		return epilogue;
+		BasicBlock *exit0 = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore), exit0);
+		builder.SetInsertPoint(exit0);
+		builder.CreateBr(vctx.Exit);
 	}
 
-	template<> BasicBlock* EmitS<3>::emitco(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-		RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	template<> void EmitS<3>::emitco(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 	{
-		BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
+		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(entryBlock);
-		Value *registers = m.getGlobalVariable("Registers");
+		builder.SetInsertPoint(vctx.Entry);
+		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
+		RegistersMap& regMap = *vctx.RegMap;
 		Value* xVal = builder.getInt64(xarg);
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
-		emitStoreMem(ctx, m, f, builder, theA, adjustEndianness(builder, valToStore), epilogue);
-		builder.SetInsertPoint(epilogue);
-		return epilogue;
+		BasicBlock *exit0 = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore), exit0);
+		builder.SetInsertPoint(exit0);
+		builder.CreateBr(vctx.Exit);
 	}
 
 	template<> Value* EmitS<0>::makeA(LLVMContext& ctx, IRBuilder<>& builder, Value* yVal, Value* zVal)
@@ -178,111 +173,92 @@ namespace {
 	}
 };
 
-BasicBlock* MmixLlvm::Private::emitSto(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-	RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitSto(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<3>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<3>::emit(vctx, xarg, yarg, zarg, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitStoi(LLVMContext& ctx, Module& m, Function& f, BasicBlock* entry,
-	RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStoi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<3>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<3>::emit(vctx, xarg, yarg, zarg, true);
 }
 
-llvm::BasicBlock* MmixLlvm::Private::emitStt(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
-	llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStt(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<2>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<2>::emit(vctx, xarg, yarg, zarg, false);
 }
 
-llvm::BasicBlock* MmixLlvm::Private::emitStti(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
-	llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStti(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<2>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<2>::emit(vctx, xarg, yarg, zarg, true);
 }
 
-llvm::BasicBlock* MmixLlvm::Private::emitStw(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
-	llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStw(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<1>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<1>::emit(vctx, xarg, yarg, zarg, false);
 }
 
-llvm::BasicBlock* MmixLlvm::Private::emitStwi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
-	llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStwi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<1>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<1>::emit(vctx, xarg, yarg, zarg, true);
 }
 
-llvm::BasicBlock* MmixLlvm::Private::emitStb(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
-	llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStb(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<0>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<0>::emit(vctx, xarg, yarg, zarg, false);
 }
 
-llvm::BasicBlock* MmixLlvm::Private::emitStbi(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
-	llvm::BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStbi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<0>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<0>::emit(vctx, xarg, yarg, zarg, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitSttu(LLVMContext& ctx, llvm::Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitSttu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<2>::emitu(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<2>::emitu(vctx, xarg, yarg, zarg, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitSttui(LLVMContext& ctx, llvm::Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitSttui(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<2>::emitu(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<2>::emitu(vctx, xarg, yarg, zarg, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitStwu(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStwu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<1>::emitu(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<1>::emitu(vctx, xarg, yarg, zarg, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitStwui(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStwui(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<1>::emitu(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<1>::emitu(vctx, xarg, yarg, zarg, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitStbu(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStbu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<0>::emitu(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<0>::emitu(vctx, xarg, yarg, zarg, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitStbui(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStbui(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<0>::emitu(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<0>::emitu(vctx, xarg, yarg, zarg, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitStht(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<2>::emitht(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<2>::emitht(vctx, xarg, yarg, zarg, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitSthti(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitSthti(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<2>::emitht(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<2>::emitht(vctx, xarg, yarg, zarg, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitStco(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStco(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<3>::emitco(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitS<3>::emitco(vctx, xarg, yarg, zarg, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitStcoi(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStcoi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitS<3>::emitco(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitS<3>::emitco(vctx, xarg, yarg, zarg, true);
 }
-

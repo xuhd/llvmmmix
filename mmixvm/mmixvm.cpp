@@ -198,6 +198,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	memset(arr, 0, sizeof(*arr) * GENERIC_REGISTERS);
 	arr[1] = MmixLlvm::DATA_SEG;
 	arr[2] = 32;
+	arr[3] = 40;
 	EE->addGlobalMapping(registersGlob, arr);
 
 	uint64_t *spArr = new uint64_t[SPECIAL_REGISTERS];
@@ -206,26 +207,42 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 	uint8_t *textSegPhys = new uint8_t[TEXT_SIZE];
 	memset(textSegPhys, 0, sizeof(*textSegPhys) * TEXT_SIZE);
-	textSegPhys[0x100] = MmixLlvm::LDT;
-	textSegPhys[0x101] = 0;
+	textSegPhys[0x100] = MmixLlvm::LDO;
+	textSegPhys[0x101] = 4;
 	textSegPhys[0x102] = 1;
 	textSegPhys[0x103] = 2;
-	textSegPhys[0x104] = MmixLlvm::STCOI;
-	textSegPhys[0x105] = 33;
+	textSegPhys[0x104] = MmixLlvm::LDO;
+	textSegPhys[0x105] = 5;
 	textSegPhys[0x106] = 1;
-	textSegPhys[0x107] = 50;
+	textSegPhys[0x107] = 3;
+	textSegPhys[0x108] = MmixLlvm::ADD;
+	textSegPhys[0x109] = 0;
+	textSegPhys[0x10A] = 4;
+	textSegPhys[0x10B] = 5;
+	textSegPhys[0x10C] = MmixLlvm::STOI;
+	textSegPhys[0x10D] = 0;
+	textSegPhys[0x10E] = 1;
+	textSegPhys[0x10F] = 64;
 	EE->addGlobalMapping(textGlob, textSegPhys);
 
 	uint8_t *dataSegPhys = new uint8_t[HEAP_SIZE];
 	memset(dataSegPhys, 0, sizeof(*dataSegPhys) * HEAP_SIZE); 
-	dataSegPhys[32] = 1;
-	dataSegPhys[33] = 2;
-	dataSegPhys[34] = 3;
-	dataSegPhys[35] = 4;
-	dataSegPhys[36] = 5;
-	dataSegPhys[37] = 6;
-	dataSegPhys[38] = 7;
-	dataSegPhys[39] = 8;
+	dataSegPhys[32] = 0;
+	dataSegPhys[33] = 0;
+	dataSegPhys[34] = 0;
+	dataSegPhys[35] = 0;
+	dataSegPhys[36] = 0;
+	dataSegPhys[37] = 0;
+	dataSegPhys[38] = 0;
+	dataSegPhys[39] = 5;
+	dataSegPhys[40] = 0;
+	dataSegPhys[41] = 0;
+	dataSegPhys[42] = 0;
+	dataSegPhys[43] = 0;
+	dataSegPhys[44] = 0;
+	dataSegPhys[45] = 0;
+	dataSegPhys[46] = 0;
+	dataSegPhys[47] = 6;
 	EE->addGlobalMapping(dataGlob, dataSegPhys);
 
 	uint8_t *poolSegPhys = new uint8_t[POOL_SIZE];
@@ -252,6 +269,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::vector<GenericValue> noargs;
 
 	GenericValue gv = EE->runFunction(f, noargs);
+	gv = EE->runFunction(f, noargs);
+	gv = EE->runFunction(f, noargs);
+	gv = EE->runFunction(f, noargs);
+	gv = EE->runFunction(f, noargs);
 
 	// Import result of execution:
 	outs() << "Result: " << gv.IntVal << "\n";

@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <vector>
+#include <sstream>
 #include <boost/tuple/tuple.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/unordered_map.hpp>

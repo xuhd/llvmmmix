@@ -28,62 +28,50 @@ namespace {
 		static Value* makeA(LLVMContext& ctx, IRBuilder<>& builder, Value* yVal, Value* zVal);
 		static Value* emitLoad(LLVMContext& ctx, IRBuilder<>& builder, Value* iref, bool isSigned);
 	public:
-		static BasicBlock* emit(LLVMContext& ctx, Module& m, Function& f, 
-			BasicBlock* entry, RegistersMap& regMap, 
-			uint8_t xarg, uint8_t yarg, uint8_t zarg,
-			bool isSigned, bool immediate);
-		static BasicBlock* emitht(LLVMContext& ctx, Module& m, Function& f, 
-			BasicBlock* entry, RegistersMap& regMap, 
-			uint8_t xarg, uint8_t yarg, uint8_t zarg,
-			bool immediate);
+		static void emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned, bool immediate);
+		static void emitht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
 	};
 
-	template<int Pow2> 
-		BasicBlock* EmitL<Pow2>::emit(LLVMContext& ctx, Module& m, Function& f, 
-			BasicBlock* entry, RegistersMap& regMap, 
-			uint8_t xarg, uint8_t yarg, uint8_t zarg,
-			bool isSigned, bool immediate)
+	template<int Pow2> void EmitL<Pow2>::emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned, bool immediate)
 	{
-		BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
+		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(entryBlock);
-		Value *registers = m.getGlobalVariable("Registers");
+		builder.SetInsertPoint(vctx.Entry);
+		RegistersMap& regMap = *vctx.RegMap;
+		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
-		Value* iref = emitFetchMem(ctx, m, f, builder, theA, epilogue);
-		builder.SetInsertPoint(epilogue);
+		BasicBlock* fetchExit = BasicBlock::Create(ctx, genUniq("fetchExit"), vctx.Function);
+		Value* iref = emitFetchMem(ctx, *vctx.Module, *vctx.Function, builder, theA, fetchExit);
+		builder.SetInsertPoint(fetchExit);
 		Value* result = emitLoad(ctx, builder, iref, isSigned);
+		builder.CreateBr(vctx.Exit);
 		RegisterRecord r0;
 		r0.value = result;
 		r0.changed = true;
 		regMap[xarg] = r0;
-		return epilogue;
 	}
 
-	template<> 
-		BasicBlock* EmitL<2>::emitht(LLVMContext& ctx, Module& m, Function& f, 
-			BasicBlock* entry, RegistersMap& regMap, 
-			uint8_t xarg, uint8_t yarg, uint8_t zarg,
-			bool immediate)
+	template<> void EmitL<2>::emitht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate) 
 	{
-		BasicBlock *entryBlock = entry != 0 ? entry : BasicBlock::Create(ctx, genUniq("block"), &f);
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("block"), &f);
+		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(entryBlock);
-		Value *registers = m.getGlobalVariable("Registers");
+		builder.SetInsertPoint(vctx.Entry);
+		RegistersMap& regMap = *vctx.RegMap;
+		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
-		Value* iref = emitFetchMem(ctx, m, f, builder, theA, epilogue);
-		builder.SetInsertPoint(epilogue);
+		BasicBlock* fetchExit = BasicBlock::Create(ctx, genUniq("fetchExit"), vctx.Function);
+		Value* iref = emitFetchMem(ctx, *vctx.Module, *vctx.Function, builder, theA, fetchExit);
+		builder.SetInsertPoint(fetchExit);
 		Value* result = builder.CreateShl(emitLoad(ctx, builder, iref, false), builder.getInt64(32));
+		builder.CreateBr(vctx.Exit);
 		RegisterRecord r0;
 		r0.value = result;
 		r0.changed = true;
 		regMap[xarg] = r0;
-		return epilogue;
 	}
 
 	template<> Value* EmitL<0>::makeA(LLVMContext& ctx, IRBuilder<>& builder, Value* yVal, Value* zVal)
@@ -141,62 +129,52 @@ namespace {
 	}
 };
 
-BasicBlock* MmixLlvm::Private::emitLdo(LLVMContext& ctx, Module& m, Function& f, 
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitLdo(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitL<3>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false, false);
+	EmitL<3>::emit(vctx, xarg, yarg, zarg, false, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdoi(LLVMContext& ctx, Module& m, Function& f, 
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitLdoi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitL<3>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false, true);
+	EmitL<3>::emit(vctx, xarg, yarg, zarg, false, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdt(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+void MmixLlvm::Private::emitLdt(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	return EmitL<2>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false, false);
+	EmitL<2>::emit(vctx, xarg, yarg, zarg, false, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdti(LLVMContext& ctx, Module& m, Function& f, 
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+void MmixLlvm::Private::emitLdti(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	return EmitL<2>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false, true);
+	EmitL<2>::emit(vctx, xarg, yarg, zarg, false, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdw(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+void MmixLlvm::Private::emitLdw(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	return EmitL<1>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false, false);
+	EmitL<1>::emit(vctx, xarg, yarg, zarg, false, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdwi(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+void MmixLlvm::Private::emitLdwi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	return EmitL<1>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false, true);
+	EmitL<1>::emit(vctx, xarg, yarg, zarg, false, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdb(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+void MmixLlvm::Private::emitLdb(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	return EmitL<0>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false, false);
+	EmitL<0>::emit(vctx, xarg, yarg, zarg, false, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdbi(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
+void MmixLlvm::Private::emitLdbi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned)
 {
-	return EmitL<0>::emit(ctx, m, f, entry, regMap, xarg, yarg, zarg, false, true);
+	EmitL<0>::emit(vctx, xarg, yarg, zarg, false, true);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdht(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitLdht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitL<2>::emitht(ctx, m, f, entry, regMap, xarg, yarg, zarg, false);
+	EmitL<2>::emitht(vctx, xarg, yarg, zarg, false);
 }
 
-BasicBlock* MmixLlvm::Private::emitLdhti(LLVMContext& ctx, Module& m, Function& f,
-	BasicBlock* entry, RegistersMap& regMap, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitLdhti(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
-	return EmitL<2>::emitht(ctx, m, f, entry, regMap, xarg, yarg, zarg, true);
+	EmitL<2>::emitht(vctx, xarg, yarg, zarg, true);
 }

@@ -15,6 +15,7 @@ using llvm::IRBuilder;
 using llvm::ArrayRef;
 using llvm::SwitchInst;
 using llvm::cast;
+using llvm::Twine;
 
 using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
@@ -22,13 +23,147 @@ using MmixLlvm::EdgeList;
 using MmixLlvm::MemAccessor;
 
 namespace {
-	void emitEpilogue(LLVMContext& ctx, Module& m, Function& f, BasicBlock& epilogue, RegistersMap& regmap) {
-		RegistersMap::iterator itr;
+	bool isTerm(uint32_t instr) {
+		return instr == 0; // todo
+	}
+
+	void emitInstruction(VerticeContext& vctx)
+	{
+		uint8_t o0 = (uint8_t) (vctx.Instr >> 24);
+		uint8_t xarg = (uint8_t) ((vctx.Instr >> 16) & 0xff);
+		uint8_t yarg = (uint8_t) ((vctx.Instr >> 8) & 0xff);
+		uint8_t zarg = (uint8_t) (vctx.Instr & 0xff);
+		switch(o0) {
+		case MmixLlvm::LDO:
+			emitLdo(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::LDOI:
+			emitLdoi(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::LDT:
+			emitLdt(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::LDTI:
+			emitLdti(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::LDW:
+			emitLdw(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::LDWI:
+			emitLdwi(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::LDB:
+			emitLdb(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::LDBI:
+			emitLdbi(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::LDOU:
+			emitLdo(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::LDOUI:
+			emitLdoi(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::LDTU:
+			emitLdt(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::LDTUI:
+			emitLdti(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::LDWU:
+			emitLdw(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::LDWUI:
+			emitLdwi(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::LDBU:
+			emitLdb(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::LDBUI:
+			emitLdbi(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::LDHT:
+			emitLdht(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::LDHTI:
+			emitLdhti(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STO:
+			emitSto(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STOI:
+			emitStoi(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STT:
+			emitStt(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STTI:
+			emitStti(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STW:
+			emitStw(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STWI:
+			emitStwi(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STB:
+			emitStb(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STBI:
+			emitStbi(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STOU:
+			emitSto(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STTU:
+			emitSttu(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STWU:
+			emitStwu(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STBU:
+			emitStbu(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STOUI:
+			emitStoi(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STTUI:
+			emitSttui(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STWUI:
+			emitStwui(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STBUI:
+			emitStbui(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STHT:
+			emitStht(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STHTI:
+			emitSthti(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STCO:
+			emitStco(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STCOI:
+			emitStcoi(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::ADD:
+			emitAdd(vctx, xarg, yarg, zarg);
+			break;
+		default:
+			assert(0 && "Not implemented");
+		}
+	}
+
+	void emitEpilogue(VerticeContext& vctx) {
+		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(&epilogue);
-		for (itr = regmap.begin(); itr != regmap.end(); ++itr) {
+		builder.SetInsertPoint(vctx.Exit);
+		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
+		RegistersMap& regMap = *vctx.RegMap;
+		for (RegistersMap::iterator itr = regMap.begin(); itr != regMap.end(); ++itr) {
 			if ((*itr).second.changed) {
-				Value *registers = m.getGlobalVariable("Registers");
 				Value* ix[2];
 				ix[0] = builder.getInt32(0);
 				ix[1] = builder.getInt32((*itr).first);
@@ -40,155 +175,52 @@ namespace {
 		}
 		builder.CreateRetVoid();
 	}
-
-	bool isTerm(uint32_t instr) {
-		return instr == 0; // todo
-	}
-
-	BasicBlock* emitInstruction(llvm::LLVMContext& ctx, llvm::Module& m, Function& f,
-		uint32_t instr, llvm::BasicBlock *cp, uint64_t xPtr, RegistersMap& regMap)
-	{
-		BasicBlock* retVal = 0;
-		uint8_t o0 = (uint8_t) (instr >> 24);
-		uint8_t xarg = (uint8_t) ((instr >> 16) & 0xff);
-		uint8_t yarg = (uint8_t) ((instr >> 8) & 0xff);
-		uint8_t zarg = (uint8_t) (instr & 0xff);
-		switch(o0) {
-		case MmixLlvm::LDO:
-			retVal = emitLdo(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::LDOI:
-			retVal = emitLdoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::LDT:
-			retVal = emitLdt(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
-			break;
-		case MmixLlvm::LDTI:
-			retVal = emitLdti(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
-			break;
-		case MmixLlvm::LDW:
-			retVal = emitLdw(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
-			break;
-		case MmixLlvm::LDWI:
-			retVal = emitLdwi(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
-			break;
-		case MmixLlvm::LDB:
-			retVal = emitLdb(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
-			break;
-		case MmixLlvm::LDBI:
-			retVal = emitLdbi(ctx, m, f, cp, regMap, xarg, yarg, zarg, true);
-			break;
-		case MmixLlvm::LDOU:
-			retVal = emitLdo(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::LDOUI:
-			retVal = emitLdoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::LDTU:
-			retVal = emitLdt(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
-			break;
-		case MmixLlvm::LDTUI:
-			retVal = emitLdti(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
-			break;
-		case MmixLlvm::LDWU:
-			retVal = emitLdw(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
-			break;
-		case MmixLlvm::LDWUI:
-			retVal = emitLdwi(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
-			break;
-		case MmixLlvm::LDBU:
-			retVal = emitLdb(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
-			break;
-		case MmixLlvm::LDBUI:
-			retVal = emitLdbi(ctx, m, f, cp, regMap, xarg, yarg, zarg, false);
-			break;
-		case MmixLlvm::LDHT:
-			retVal = emitLdht(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::LDHTI:
-			retVal = emitLdhti(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STO:
-			retVal = emitSto(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STOI:
-			retVal = emitStoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STT:
-			retVal = emitStt(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STTI:
-			retVal = emitStti(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STW:
-			retVal = emitStw(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STWI:
-			retVal = emitStwi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STB:
-			retVal = emitStb(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STBI:
-			retVal = emitStbi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STOU:
-			retVal = emitSto(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STTU:
-			retVal = emitSttu(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STWU:
-			retVal = emitStwu(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STBU:
-			retVal = emitStbu(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STOUI:
-			retVal = emitStoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STTUI:
-			retVal = emitSttui(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STWUI:
-			retVal = emitStwui(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STBUI:
-			retVal = emitStbui(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STHT:
-			retVal = emitStht(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STHTI:
-			retVal = emitSthti(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STCO:
-			retVal = emitStco(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		case MmixLlvm::STCOI:
-			retVal = emitStcoi(ctx, m, f, cp, regMap, xarg, yarg, zarg);
-			break;
-		default:
-			assert(0 && "Not implemented");
-		}
-		return retVal;
-	}
 }
+
+namespace {
+	Twine getInstrTwine(std::vector<std::string>& twines, uint32_t instr, uint64_t xptr)
+	{
+		std::ostringstream oss;
+		oss<<"instr_"<<std::hex<<instr<<"@"<<xptr<<"#";
+		twines.push_back(oss.str());
+		return genUniq(Twine(twines.back()));
+	}
+};
 
 boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, uint64_t xPtr)
 {
+	std::vector<std::string> twines;
 	RegistersMap regMap;
 	uint64_t xPtr0 = xPtr;
 	Function* f = cast<Function>(m.getOrInsertFunction(genUniq("fun").str(), Type::getVoidTy(ctx) , (Type *)0));
-	llvm::BasicBlock *connectionPoint = 0;
+	BasicBlock *verticeEntry = BasicBlock::Create(ctx, genUniq("entry") + Twine(xPtr), f);
+	std::vector<VerticeContext> oenv;
+	BasicBlock *block = verticeEntry;
 	for (;;) {
 		uint32_t instr = ma.readTetra(xPtr0);
 		if (isTerm(instr))
 			break;
-		connectionPoint = emitInstruction(ctx, m, *f, instr, connectionPoint, xPtr, regMap);
+		VerticeContext e;
+		e.Ctx = &ctx;
+		e.Function = f;
+		e.Module = &m;
+		e.RegMap = &regMap;
+		e.XPtr = xPtr0;
+		e.Instr = instr;
+		e.Entry = block;
+		if (!oenv.empty())
+			oenv.back().Exit = block;
+		oenv.push_back(e);
+		block = BasicBlock::Create(ctx, getInstrTwine(twines, e.Instr, e.XPtr), f);
 		xPtr0 += sizeof(uint32_t);
 	}
-	if (connectionPoint)
-		emitEpilogue(ctx, m, *f, *connectionPoint, regMap);
+	if (!oenv.empty())
+		oenv.back().Exit = BasicBlock::Create(ctx, genUniq("epilogue") + Twine(xPtr), f);
+	
+	for (std::vector<VerticeContext>::iterator itr = oenv.begin(); itr != oenv.end(); ++itr)
+		emitInstruction(*itr);
+
+	if (!oenv.empty())
+		emitEpilogue(oenv.back());
 	return boost::make_tuple(f, EdgeList());
 }
