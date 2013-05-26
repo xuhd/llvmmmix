@@ -142,8 +142,15 @@ int _tmain(int argc, _TCHAR* argv[])
 		GlobalValue::CommonLinkage,
 		0,
 		"Registers");
-
 	registersGlob->setAlignment(8);
+
+	GlobalVariable* specialRegistersGlob = new GlobalVariable(*M,
+		ArrayType::get(Type::getInt64Ty(Context), SPECIAL_REGISTERS),
+		false,
+		GlobalValue::CommonLinkage,
+		0,
+		"SpecialRegisters");
+	specialRegistersGlob->setAlignment(8);
 	
 	GlobalVariable* textGlob = new GlobalVariable(*M,
 		ArrayType::get(Type::getInt8Ty(Context), TEXT_SIZE),
@@ -179,13 +186,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		0,
 		"StackSeg");
 	stackGlob->setAlignment(8);
-
-	//GlobalVariable* HandleOverflowRef = new GlobalVariable(*M,
-	//	FunctionType::get(Type::getVoidTy(Context), false),
-	//	false,
-	//	GlobalValue::CommonLinkage,
-	//	0,
-//		"HandleOverflow");
 	
 	llvm::Function* handleOverflowRef = llvm::Function::Create(
 		FunctionType::get(Type::getVoidTy(Context), false), 
@@ -193,12 +193,16 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	boost::scoped_ptr<ExecutionEngine> EE(EngineBuilder(M).create());
 	EE->addGlobalMapping(handleOverflowRef, &HandleOverflow);
-	uint64_t *arr;
-	arr = new uint64_t[GENERIC_REGISTERS];
+
+	uint64_t *arr = new uint64_t[GENERIC_REGISTERS];
 	memset(arr, 0, sizeof(*arr) * GENERIC_REGISTERS);
 	arr[1] = MmixLlvm::DATA_SEG;
 	arr[2] = 32;
 	EE->addGlobalMapping(registersGlob, arr);
+
+	uint64_t *spArr = new uint64_t[SPECIAL_REGISTERS];
+	memset(spArr, 0, sizeof(*spArr) * SPECIAL_REGISTERS);
+	EE->addGlobalMapping(specialRegistersGlob, spArr);
 	
 	uint8_t *textSegPhys = new uint8_t[TEXT_SIZE];
 	memset(textSegPhys, 0, sizeof(*textSegPhys) * TEXT_SIZE);

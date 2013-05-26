@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Util.h"
-#include "MmixEmit.h"
+#include "MmixEmitPvt.h"
 #include "MmixDef.h"
 
 using llvm::LLVMContext;
@@ -17,8 +17,6 @@ using llvm::cast;
 
 using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
-using MmixLlvm::EdgeList;
-using MmixLlvm::MemAccessor;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
 

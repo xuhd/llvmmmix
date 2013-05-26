@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Util.h"
 #include "MmixEmit.h"
+#include "MmixEmitPvt.h"
 #include "MmixDef.h"
 
 using llvm::LLVMContext;

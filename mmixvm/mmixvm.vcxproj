@@ -98,11 +98,13 @@
     <ClInclude Include="MemAccess.h" />
     <ClInclude Include="MmixDef.h" />
     <ClInclude Include="MmixEmit.h" />
+    <ClInclude Include="MmixEmitPvt.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ArithOpcodesImpl.cpp" />
     <ClCompile Include="CommonImpl.cpp" />
     <ClCompile Include="LoadOpcodesImpl.cpp" />
     <ClCompile Include="MemAccess.cpp" />
