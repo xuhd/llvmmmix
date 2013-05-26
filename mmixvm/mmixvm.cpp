@@ -202,11 +202,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 	uint8_t *textSegPhys = new uint8_t[TEXT_SIZE];
 	memset(textSegPhys, 0, sizeof(*textSegPhys) * TEXT_SIZE);
-	textSegPhys[0x100] = MmixLlvm::LDO;
+	textSegPhys[0x100] = MmixLlvm::LDT;
 	textSegPhys[0x101] = 0;
 	textSegPhys[0x102] = 1;
 	textSegPhys[0x103] = 2;
-	textSegPhys[0x104] = MmixLlvm::STWI;
+	textSegPhys[0x104] = MmixLlvm::STHTI;
 	textSegPhys[0x105] = 0;
 	textSegPhys[0x106] = 1;
 	textSegPhys[0x107] = 50;
@@ -214,10 +214,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	uint8_t *dataSegPhys = new uint8_t[HEAP_SIZE];
 	memset(dataSegPhys, 0, sizeof(*dataSegPhys) * HEAP_SIZE); 
-	dataSegPhys[32] = 0;
-	dataSegPhys[33] = 0;
-	dataSegPhys[34] = 0;
-	dataSegPhys[35] = 0;
+	dataSegPhys[32] = 1;
+	dataSegPhys[33] = 2;
+	dataSegPhys[34] = 3;
+	dataSegPhys[35] = 4;
 	dataSegPhys[36] = 5;
 	dataSegPhys[37] = 6;
 	dataSegPhys[38] = 7;

@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mmixal", "mmixal\mmixal.csp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mmixvm", "mmixvm\mmixvm.vcxproj", "{DD44D486-09D9-4632-B8EF-9169C4241E8C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{50762669-75D9-4226-B050-FC8196B751B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -35,6 +37,16 @@ Global
 		{DD44D486-09D9-4632-B8EF-9169C4241E8C}.Release|Win32.ActiveCfg = Release|Win32
 		{DD44D486-09D9-4632-B8EF-9169C4241E8C}.Release|Win32.Build.0 = Release|Win32
 		{DD44D486-09D9-4632-B8EF-9169C4241E8C}.Release|x86.ActiveCfg = Release|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Debug|Win32.Build.0 = Debug|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Debug|x86.ActiveCfg = Debug|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Release|Win32.ActiveCfg = Release|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Release|Win32.Build.0 = Release|Win32
+		{50762669-75D9-4226-B050-FC8196B751B1}.Release|x86.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

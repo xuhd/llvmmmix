@@ -155,6 +155,12 @@ namespace {
 		case MmixLlvm::STBUI:
 			retVal = emitStbui(ctx, m, f, cp, regMap, xarg, yarg, zarg);
 			break;
+		case MmixLlvm::STHT:
+			retVal = emitStht(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::STHTI:
+			retVal = emitSthti(ctx, m, f, cp, regMap, xarg, yarg, zarg);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}

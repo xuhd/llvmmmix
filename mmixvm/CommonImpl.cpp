@@ -13,6 +13,7 @@ using llvm::BasicBlock;
 using llvm::IRBuilder;
 using llvm::ArrayRef;
 using llvm::SwitchInst;
+using llvm::Twine;
 using llvm::cast;
 
 using namespace MmixLlvm::Util;
@@ -62,7 +63,7 @@ Value* MmixLlvm::Private::emitAdjust16Endianness(IRBuilder<>& builder, Value* va
 	return q1;
 }
 
-Value* MmixLlvm::Private::emitRegisterLoad(llvm::LLVMContext& ctx, IRBuilder<>& builder, Value* regGlob, RegistersMap& regMap, uint8_t reg) {
+Value* MmixLlvm::Private::emitRegisterLoad(LLVMContext& ctx, IRBuilder<>& builder, Value* regGlob, RegistersMap& regMap, uint8_t reg) {
 	Value* retVal;
 	RegistersMap::iterator itr = regMap.find(reg);
 	if (itr == regMap.end()) {
@@ -71,7 +72,7 @@ Value* MmixLlvm::Private::emitRegisterLoad(llvm::LLVMContext& ctx, IRBuilder<>& 
 		ix[1] = builder.getInt32(reg);
 		retVal = builder.CreateLoad(
 			builder.CreatePointerCast(
-			builder.CreateGEP(regGlob, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)), false, llvm::Twine("reg")+llvm::Twine(reg));
+			builder.CreateGEP(regGlob, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)), false, Twine("reg")+Twine(reg));
 		RegisterRecord r0;
 		r0.value = retVal;
 		r0.changed = false;
@@ -82,7 +83,7 @@ Value* MmixLlvm::Private::emitRegisterLoad(llvm::LLVMContext& ctx, IRBuilder<>& 
 	return retVal;
 }
 
-Value* MmixLlvm::Private::emitGetTextPtr(llvm::LLVMContext& ctx, llvm::Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
+Value* MmixLlvm::Private::emitGetTextPtr(LLVMContext& ctx, Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
 	Value* glob = m.getGlobalVariable("TextSeg");
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
@@ -91,7 +92,7 @@ Value* MmixLlvm::Private::emitGetTextPtr(llvm::LLVMContext& ctx, llvm::Module& m
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), ty);
 }
 
-Value* MmixLlvm::Private::emitGetDataPtr(llvm::LLVMContext& ctx, llvm::Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
+Value* MmixLlvm::Private::emitGetDataPtr(LLVMContext& ctx, Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
 	Value* glob = m.getGlobalVariable("DataSeg");
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
@@ -102,7 +103,7 @@ Value* MmixLlvm::Private::emitGetDataPtr(llvm::LLVMContext& ctx, llvm::Module& m
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), ty);
 }
 
-Value* MmixLlvm::Private::emitGetPoolPtr(llvm::LLVMContext& ctx, llvm::Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
+Value* MmixLlvm::Private::emitGetPoolPtr(LLVMContext& ctx, Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
 	Value* glob = m.getGlobalVariable("PoolSeg");
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
@@ -113,7 +114,7 @@ Value* MmixLlvm::Private::emitGetPoolPtr(llvm::LLVMContext& ctx, llvm::Module& m
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), ty);
 }
 
-Value* MmixLlvm::Private::emitGetStackPtr(llvm::LLVMContext& ctx, llvm::Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
+Value* MmixLlvm::Private::emitGetStackPtr(LLVMContext& ctx, Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
 	Value* glob = m.getGlobalVariable("StackSeg");
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
@@ -124,7 +125,7 @@ Value* MmixLlvm::Private::emitGetStackPtr(llvm::LLVMContext& ctx, llvm::Module& 
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), ty);
 }
 
-Value* MmixLlvm::Private::emitFetchMem(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
+Value* MmixLlvm::Private::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
 	IRBuilder<>& builder, Value* theA, Type* ty, BasicBlock* exit) 
 {
 	Value* retVal = builder.CreateAlloca(ty);
