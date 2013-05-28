@@ -23,10 +23,9 @@ using MmixLlvm::Private::RegistersMap;
 namespace {
 	template<int Pow2> class EmitL
 	{
-		static Value* emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
-			IRBuilder<>& builder, Value* theA, BasicBlock* exit);
-		static Value* makeA(LLVMContext& ctx, IRBuilder<>& builder, Value* yVal, Value* zVal);
-		static Value* emitLoad(LLVMContext& ctx, IRBuilder<>& builder, Value* iref, bool isSigned);
+		static Value* emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA);
+		static Value* makeA(VerticeContext& vctx, IRBuilder<>& builder, Value* yVal, Value* zVal);
+		static Value* emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* iref, bool isSigned);
 	public:
 		static void emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool isSigned, bool immediate);
 		static void emitht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
@@ -41,11 +40,9 @@ namespace {
 		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
-		Value* theA = makeA(ctx, builder, yVal, zVal);
-		BasicBlock* fetchExit = BasicBlock::Create(ctx, genUniq("fetchExit"), vctx.Function);
-		Value* iref = emitFetchMem(ctx, *vctx.Module, *vctx.Function, builder, theA, fetchExit);
-		builder.SetInsertPoint(fetchExit);
-		Value* result = emitLoad(ctx, builder, iref, isSigned);
+		Value* theA = makeA(vctx, builder, yVal, zVal);
+		Value* readVal = emitFetchMem(vctx, builder, theA);
+		Value* result = emitLoad(vctx, builder, readVal, isSigned);
 		builder.CreateBr(vctx.Exit);
 		RegisterRecord r0;
 		r0.value = result;
@@ -62,11 +59,9 @@ namespace {
 		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
-		Value* theA = makeA(ctx, builder, yVal, zVal);
-		BasicBlock* fetchExit = BasicBlock::Create(ctx, genUniq("fetchExit"), vctx.Function);
-		Value* iref = emitFetchMem(ctx, *vctx.Module, *vctx.Function, builder, theA, fetchExit);
-		builder.SetInsertPoint(fetchExit);
-		Value* result = builder.CreateShl(emitLoad(ctx, builder, iref, false), builder.getInt64(32));
+		Value* theA = makeA(vctx, builder, yVal, zVal);
+		Value* readVal = emitFetchMem(vctx, builder, theA);
+		Value* result = builder.CreateShl(emitLoad(vctx, builder, readVal, false), builder.getInt64(32));
 		builder.CreateBr(vctx.Exit);
 		RegisterRecord r0;
 		r0.value = result;
@@ -74,58 +69,54 @@ namespace {
 		regMap[xarg] = r0;
 	}
 
-	template<> Value* EmitL<0>::makeA(LLVMContext& ctx, IRBuilder<>& builder, Value* yVal, Value* zVal)
+	template<> Value* EmitL<0>::makeA(VerticeContext& vctx, IRBuilder<>& builder, Value* yVal, Value* zVal)
 	{
 		return builder.CreateAdd(yVal, zVal);
 	}
 
-	template<int Pow2> Value* EmitL<Pow2>::makeA(LLVMContext& ctx, IRBuilder<>& builder, Value* yVal, Value* zVal)
+	template<int Pow2> Value* EmitL<Pow2>::makeA(VerticeContext& vctx, IRBuilder<>& builder, Value* yVal, Value* zVal)
 	{
 		return builder.CreateAnd(builder.CreateNot(builder.getInt64((1 << Pow2) - 1)), builder.CreateAdd(yVal, zVal));
 	}
 
-	template<> Value* EmitL<3>::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
-			IRBuilder<>& builder, Value* theA, BasicBlock* exit)
+	template<> Value* EmitL<3>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(ctx, m, f, builder, theA, Type::getInt64Ty(ctx), exit);
+		return MmixLlvm::Private::emitFetchMem(*vctx.Ctx, *vctx.Module, *vctx.Function, builder, theA, Type::getInt64Ty(*vctx.Ctx));
 	}
 
-	template<> Value* EmitL<2>::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
-			IRBuilder<>& builder, Value* theA, BasicBlock* exit)
+	template<> Value* EmitL<2>::emitFetchMem(VerticeContext& vctx,IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(ctx, m, f, builder, theA, Type::getInt32Ty(ctx), exit);
+		return MmixLlvm::Private::emitFetchMem(*vctx.Ctx, *vctx.Module, *vctx.Function, builder, theA, Type::getInt32Ty(*vctx.Ctx));
 	}
 
-	template<> Value* EmitL<1>::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
-			IRBuilder<>& builder, Value* theA, BasicBlock* exit)
+	template<> Value* EmitL<1>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(ctx, m, f, builder, theA, Type::getInt16Ty(ctx), exit);
+		return MmixLlvm::Private::emitFetchMem(*vctx.Ctx, *vctx.Module, *vctx.Function, builder, theA, Type::getInt16Ty(*vctx.Ctx));
 	}
 
-	template<> Value* EmitL<0>::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
-			IRBuilder<>& builder, Value* theA, BasicBlock* exit)
+	template<> Value* EmitL<0>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(ctx, m, f, builder, theA, Type::getInt8Ty(ctx), exit);
+		return MmixLlvm::Private::emitFetchMem(*vctx.Ctx, *vctx.Module, *vctx.Function, builder, theA, Type::getInt8Ty(*vctx.Ctx));
 	}
 
-	template<> Value* EmitL<3>::emitLoad(LLVMContext& ctx, IRBuilder<>& builder, Value* iref, bool isSigned)
+	template<> Value* EmitL<3>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)
 	{
-		return builder.CreateIntCast(emitAdjust64Endianness(builder, builder.CreateLoad(iref)), Type::getInt64Ty(ctx), isSigned);
+		return builder.CreateIntCast(emitAdjust64Endianness(builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
 	}
 
-	template<> Value* EmitL<2>::emitLoad(LLVMContext& ctx, IRBuilder<>& builder, Value* iref, bool isSigned)
+	template<> Value* EmitL<2>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)
 	{
-		return builder.CreateIntCast(emitAdjust32Endianness(builder, builder.CreateLoad(iref)), Type::getInt64Ty(ctx), isSigned);
+		return builder.CreateIntCast(emitAdjust32Endianness(builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
 	}
 
-	template<> Value* EmitL<1>::emitLoad(LLVMContext& ctx, IRBuilder<>& builder, Value* iref, bool isSigned)
+	template<> Value* EmitL<1>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)
 	{
-		return builder.CreateIntCast(emitAdjust16Endianness(builder, builder.CreateLoad(iref)), Type::getInt64Ty(ctx), isSigned);
+		return builder.CreateIntCast(emitAdjust16Endianness(builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
 	}
 
-	template<> Value* EmitL<0>::emitLoad(LLVMContext& ctx, IRBuilder<>& builder, Value* iref, bool isSigned)
+	template<> Value* EmitL<0>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)
 	{
-		return builder.CreateIntCast(builder.CreateLoad(iref), Type::getInt64Ty(ctx), isSigned);
+		return builder.CreateIntCast(readVal, Type::getInt64Ty(*vctx.Ctx), isSigned);
 	}
 };
 

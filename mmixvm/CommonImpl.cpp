@@ -22,7 +22,9 @@ using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
 
 namespace {
-	const uint64_t ADDR_MASK = ~(3i64 << 61);
+	const uint32_t REGION_BIT_OFFSET = 61;
+	const uint64_t TWO_ENABLED_BITS = 3i64;
+	const uint64_t ADDR_MASK = ~(TWO_ENABLED_BITS << REGION_BIT_OFFSET);
 };
 
 Value* MmixLlvm::Private::emitAdjust64Endianness(IRBuilder<>& builder, Value* val) {
@@ -85,6 +87,7 @@ Value* MmixLlvm::Private::emitRegisterLoad(LLVMContext& ctx, IRBuilder<>& builde
 	return retVal;
 }
 
+/*
 Value* MmixLlvm::Private::emitGetTextPtr(LLVMContext& ctx, Module& m, IRBuilder<>& builder, Value* theA, PointerType* ty) {
 	Value* glob = m.getGlobalVariable("TextSeg");
 	Value* ix[2];
@@ -127,63 +130,44 @@ Value* MmixLlvm::Private::emitGetStackPtr(LLVMContext& ctx, Module& m, IRBuilder
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), ty);
 }
 
+*/
 Value* MmixLlvm::Private::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
-	IRBuilder<>& builder, Value* theA, Type* ty, BasicBlock* exit) 
+	IRBuilder<>& builder, Value* theA, Type* ty) 
 {
-	Value* retVal = builder.CreateAlloca(ty);
-	BasicBlock *readTextBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
-	BasicBlock *readDataBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
-	BasicBlock *readPoolBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
-	BasicBlock *readStackBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
-	SwitchInst *switchInst = builder.CreateSwitch(builder.CreateLShr(theA, 61), readTextBlock, 4);
-	(*switchInst).addCase(builder.getInt64(0), readTextBlock);
-	(*switchInst).addCase(builder.getInt64(1), readDataBlock);
-	(*switchInst).addCase(builder.getInt64(2), readPoolBlock);
-	(*switchInst).addCase(builder.getInt64(3), readStackBlock);
-	Value* theValue;
-	builder.SetInsertPoint(readTextBlock);
-	theValue = builder.CreateLoad(emitGetTextPtr(ctx, m, builder, theA, PointerType::get(ty, 0)));
-	builder.CreateStore(theValue, retVal);
-	builder.CreateBr(exit);
-	builder.SetInsertPoint(readDataBlock);
-	theValue = builder.CreateLoad(emitGetDataPtr(ctx, m, builder, theA, PointerType::get(ty, 0)));
-	builder.CreateStore(theValue, retVal);
-	builder.CreateBr(exit);
-	builder.SetInsertPoint(readPoolBlock);
-	theValue = builder.CreateLoad(emitGetPoolPtr(ctx, m, builder, theA, PointerType::get(ty, 0)));
-	builder.CreateStore(theValue, retVal);
-	builder.CreateBr(exit);
-	builder.SetInsertPoint(readStackBlock);
-	theValue = builder.CreateLoad(emitGetStackPtr(ctx, m, builder, theA, PointerType::get(ty, 0)));
-	builder.CreateStore(theValue, retVal);
-	builder.CreateBr(exit);
-	return retVal;
+	Value* glob = m.getGlobalVariable("AddressTranslateTable");
+	Value* ix[2];
+	ix[0] = builder.getInt32(0);
+	ix[1] = builder.CreateIntCast(
+		builder.CreateAnd(
+			builder.CreateLShr(theA, REGION_BIT_OFFSET),
+			builder.getInt64(TWO_ENABLED_BITS)),
+		Type::getInt32Ty(ctx), false);
+	Value *attVal = builder.CreateLoad(builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)));
+	glob = m.getGlobalVariable("Memory");
+	Value* normAddr = builder.CreateIntCast(builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)), Type::getInt32Ty(ctx), false);
+	ix[1] = builder.CreateAdd(normAddr, attVal);
+	Value* targetPtr = builder.CreatePointerCast(
+		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), PointerType::get(ty, 0)); 
+	return builder.CreateLoad(targetPtr);
 }
 
 void MmixLlvm::Private::emitStoreMem(LLVMContext& ctx, Module& m, Function& f,
-	IRBuilder<>& builder, Value* theA, Value* val, BasicBlock* exit)
+	IRBuilder<>& builder, Value* theA, Value* val)
 {
-	BasicBlock *writeTextBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
-	BasicBlock *writeDataBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
-	BasicBlock *writePoolBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
-	BasicBlock *writeStackBlock = BasicBlock::Create(ctx, genUniq("block"), &f);
-	SwitchInst *switchInst = builder.CreateSwitch(builder.CreateLShr(theA, 61), writeTextBlock, 4);
-	(*switchInst).addCase(builder.getInt64(0), writeTextBlock);
-	(*switchInst).addCase(builder.getInt64(1), writeDataBlock);
-	(*switchInst).addCase(builder.getInt64(2), writePoolBlock);
-	(*switchInst).addCase(builder.getInt64(3), writeStackBlock);
-	Value* theValue;
-	builder.SetInsertPoint(writeTextBlock);
-	theValue = builder.CreateStore(val, emitGetTextPtr(ctx, m, builder, theA, (*(*val).getType()).getPointerTo()));
-	builder.CreateBr(exit);
-	builder.SetInsertPoint(writeDataBlock);
-	theValue = builder.CreateStore(val, emitGetDataPtr(ctx, m, builder, theA, (*(*val).getType()).getPointerTo()));
-	builder.CreateBr(exit);
-	builder.SetInsertPoint(writePoolBlock);
-	theValue = builder.CreateStore(val, emitGetPoolPtr(ctx, m, builder, theA, (*(*val).getType()).getPointerTo()));
-	builder.CreateBr(exit);
-	builder.SetInsertPoint(writeStackBlock);
-	theValue = builder.CreateStore(val, emitGetStackPtr(ctx, m, builder, theA, (*(*val).getType()).getPointerTo()));
-	builder.CreateBr(exit);
+	Value* glob = m.getGlobalVariable("AddressTranslateTable");
+	Value* ix[2];
+	ix[0] = builder.getInt32(0);
+	ix[1] = builder.CreateIntCast(
+		builder.CreateAnd(
+			builder.CreateLShr(theA, REGION_BIT_OFFSET),
+			builder.getInt64(TWO_ENABLED_BITS)),
+		Type::getInt32Ty(ctx), false);
+	Value *attVal = builder.CreateLoad(builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)));
+	glob = m.getGlobalVariable("Memory");
+	Value* normAddr = builder.CreateIntCast(builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)), Type::getInt32Ty(ctx), false);
+	ix[1] = builder.CreateAdd(normAddr, attVal);
+	Value* targetPtr = builder.CreatePointerCast(
+		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), (*(*val).getType()).getPointerTo()); 
+	builder.CreateStore(val, targetPtr);
 }
 

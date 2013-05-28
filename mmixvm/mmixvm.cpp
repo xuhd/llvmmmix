@@ -23,6 +23,16 @@ namespace {
 		outs().flush();
 	}
 
+	void DebugInt32(int arg) {
+		outs() << "Debug int32 "<<arg<<'\n';
+		outs().flush();
+	}
+
+	void DebugInt64(int64_t arg) {
+		outs() << "Debug int64 "<<arg<<'\n';
+		outs().flush();
+	}
+
 	class MemAccessImpl : public MmixLlvm::MemAccessor {
 		const llvm::ArrayRef<uint8_t> _textRef;
 
@@ -151,115 +161,107 @@ int _tmain(int argc, _TCHAR* argv[])
 		0,
 		"SpecialRegisters");
 	specialRegistersGlob->setAlignment(8);
+
+	enum {MEM_ARR_SIZE = TEXT_SIZE + HEAP_SIZE + POOL_SIZE + STACK_SIZE};
 	
-	GlobalVariable* textGlob = new GlobalVariable(*M,
-		ArrayType::get(Type::getInt8Ty(Context), TEXT_SIZE),
+	GlobalVariable* memGlob = new GlobalVariable(*M,
+		ArrayType::get(Type::getInt8Ty(Context), MEM_ARR_SIZE),
 		false,
 		GlobalValue::CommonLinkage,
 		0,
-		"TextSeg");
+		"Memory");
 
-	textGlob->setAlignment(8);
+	memGlob->setAlignment(8);
 
-	GlobalVariable* dataGlob = new GlobalVariable(*M,
-		ArrayType::get(Type::getInt8Ty(Context), HEAP_SIZE),
+	GlobalVariable* addressTranslateTableGlob = new GlobalVariable(*M,
+		ArrayType::get(Type::getInt32Ty(Context), 4),
 		false,
 		GlobalValue::CommonLinkage,
 		0,
-		"DataSeg");
-
-	dataGlob->setAlignment(8);
-
-	GlobalVariable* poolGlob = new GlobalVariable(*M,
-		ArrayType::get(Type::getInt8Ty(Context), POOL_SIZE),
-		false,
-		GlobalValue::CommonLinkage,
-		0,
-		"PoolSeg");
-
-	poolGlob->setAlignment(8);
-
-	GlobalVariable* stackGlob = new GlobalVariable(*M,
-		ArrayType::get(Type::getInt8Ty(Context), STACK_SIZE),
-		false,
-		GlobalValue::CommonLinkage,
-		0,
-		"StackSeg");
-	stackGlob->setAlignment(8);
+		"AddressTranslateTable");
 	
 	llvm::Function* handleOverflowRef = llvm::Function::Create(
 		FunctionType::get(Type::getVoidTy(Context), false), 
 		Function::ExternalLinkage, "HandleOverflow", M);
 
+	Type* params[1];
+
+	params[0] = Type::getInt32Ty(Context);
+	llvm::Function* debugInt32 = llvm::Function::Create(
+		FunctionType::get(Type::getVoidTy(Context), ArrayRef<Type*>(params, params + 1), false), 
+		Function::ExternalLinkage, "DebugInt32", M);
+
+	params[0] = Type::getInt64Ty(Context);
+
+	llvm::Function* debugInt64 = llvm::Function::Create(
+		FunctionType::get(Type::getVoidTy(Context), ArrayRef<Type*>(params, params + 1), false), 
+		Function::ExternalLinkage, "DebugInt64", M);
+
 	boost::scoped_ptr<ExecutionEngine> EE(EngineBuilder(M).create());
 	EE->addGlobalMapping(handleOverflowRef, &HandleOverflow);
+	EE->addGlobalMapping(debugInt32, &DebugInt32);
+	EE->addGlobalMapping(debugInt64, &DebugInt64);
 
-	uint64_t *arr = new uint64_t[GENERIC_REGISTERS];
-	memset(arr, 0, sizeof(*arr) * GENERIC_REGISTERS);
+	std::vector<uint64_t> arr(GENERIC_REGISTERS);
 	arr[1] = MmixLlvm::DATA_SEG;
 	arr[2] = 32;
 	arr[3] = 40;
-	EE->addGlobalMapping(registersGlob, arr);
+	EE->addGlobalMapping(registersGlob, &arr[0]);
 
 	uint64_t *spArr = new uint64_t[SPECIAL_REGISTERS];
 	memset(spArr, 0, sizeof(*spArr) * SPECIAL_REGISTERS);
 	EE->addGlobalMapping(specialRegistersGlob, spArr);
 	
-	uint8_t *textSegPhys = new uint8_t[TEXT_SIZE];
-	memset(textSegPhys, 0, sizeof(*textSegPhys) * TEXT_SIZE);
-	textSegPhys[0x100] = MmixLlvm::LDO;
-	textSegPhys[0x101] = 4;
-	textSegPhys[0x102] = 1;
-	textSegPhys[0x103] = 2;
-	textSegPhys[0x104] = MmixLlvm::LDO;
-	textSegPhys[0x105] = 5;
-	textSegPhys[0x106] = 1;
-	textSegPhys[0x107] = 3;
-	textSegPhys[0x108] = MmixLlvm::ADD;
-	textSegPhys[0x109] = 0;
-	textSegPhys[0x10A] = 4;
-	textSegPhys[0x10B] = 5;
-	textSegPhys[0x10C] = MmixLlvm::STOI;
-	textSegPhys[0x10D] = 0;
-	textSegPhys[0x10E] = 1;
-	textSegPhys[0x10F] = 64;
-	EE->addGlobalMapping(textGlob, textSegPhys);
+	std::vector<uint8_t> memPhys(MEM_ARR_SIZE);
+	memPhys[0x100] = MmixLlvm::LDO;
+	memPhys[0x101] = 4;
+	memPhys[0x102] = 1;
+	memPhys[0x103] = 2;
+	memPhys[0x104] = MmixLlvm::LDO;
+	memPhys[0x105] = 5;
+	memPhys[0x106] = 1;
+	memPhys[0x107] = 3;
+	memPhys[0x108] = MmixLlvm::ADD;
+	memPhys[0x109] = 0;
+	memPhys[0x10A] = 4;
+	memPhys[0x10B] = 5;
+	memPhys[0x10C] = MmixLlvm::STOI;
+	memPhys[0x10D] = 0;
+	memPhys[0x10E] = 1;
+	memPhys[0x10F] = 64;
+	EE->addGlobalMapping(memGlob, &memPhys[0]);
 
-	uint8_t *dataSegPhys = new uint8_t[HEAP_SIZE];
-	memset(dataSegPhys, 0, sizeof(*dataSegPhys) * HEAP_SIZE); 
-	dataSegPhys[32] = 0;
-	dataSegPhys[33] = 0;
-	dataSegPhys[34] = 0;
-	dataSegPhys[35] = 0;
-	dataSegPhys[36] = 0;
-	dataSegPhys[37] = 0;
-	dataSegPhys[38] = 0;
-	dataSegPhys[39] = 5;
-	dataSegPhys[40] = 0;
-	dataSegPhys[41] = 0;
-	dataSegPhys[42] = 0;
-	dataSegPhys[43] = 0;
-	dataSegPhys[44] = 0;
-	dataSegPhys[45] = 0;
-	dataSegPhys[46] = 0;
-	dataSegPhys[47] = 6;
-	EE->addGlobalMapping(dataGlob, dataSegPhys);
+	uint8_t* dataPtr = &memPhys[0] + TEXT_SIZE;
+	dataPtr[32] = 0;
+	dataPtr[33] = 0;
+	dataPtr[34] = 0;
+	dataPtr[35] = 0;
+	dataPtr[36] = 0;
+	dataPtr[37] = 0;
+	dataPtr[38] = 0;
+	dataPtr[39] = 3;
+	dataPtr[40] = 0;
+	dataPtr[41] = 0;
+	dataPtr[42] = 0;
+	dataPtr[43] = 0;
+	dataPtr[44] = 0;
+	dataPtr[45] = 0;
+	dataPtr[46] = 0;
+	dataPtr[47] = 4;
 
-	uint8_t *poolSegPhys = new uint8_t[POOL_SIZE];
-	memset(poolSegPhys, 0, sizeof(*poolSegPhys) * POOL_SIZE); 
-	EE->addGlobalMapping(poolGlob, poolSegPhys);
-
-	uint8_t *stackSegPhys = new uint8_t[STACK_SIZE];
-	memset(stackSegPhys, 0, sizeof(*stackSegPhys) * STACK_SIZE); 
-	EE->addGlobalMapping(stackGlob, stackSegPhys);
+	std::vector<uint32_t> att(4);
+	att[0] = 0;
+	att[1] = TEXT_SIZE;
+	att[2] = TEXT_SIZE + HEAP_SIZE;
+	att[3] = TEXT_SIZE + HEAP_SIZE + POOL_SIZE;
+	EE->addGlobalMapping(addressTranslateTableGlob, &att[0]);
 
 	boost::scoped_ptr<MmixLlvm::MemAccessor> accessor(
-		new MemAccessImpl(llvm::ArrayRef<uint8_t>(textSegPhys, textSegPhys + TEXT_SIZE),
-		            llvm::ArrayRef<uint8_t>(dataSegPhys, dataSegPhys + HEAP_SIZE),
-					llvm::ArrayRef<uint8_t>(poolSegPhys, poolSegPhys + POOL_SIZE),
-					llvm::ArrayRef<uint8_t>(stackSegPhys, stackSegPhys + STACK_SIZE)));
+		new MemAccessImpl(llvm::ArrayRef<uint8_t>(&memPhys[0] + att[0], &memPhys[0] + att[1]),
+		            llvm::ArrayRef<uint8_t>(&memPhys[0] + att[1], &memPhys[0] + att[2]),
+					llvm::ArrayRef<uint8_t>(&memPhys[0] + att[2], &memPhys[0] + att[3]),
+					llvm::ArrayRef<uint8_t>(&memPhys[0] + att[3], &memPhys[0] + MEM_ARR_SIZE)));
 
-	//MmixLlvm::emitSimpleVertice(Context, *M, *iterArray, 0x100); 
 	Function *f;
 	MmixLlvm::EdgeList edgeList;
 

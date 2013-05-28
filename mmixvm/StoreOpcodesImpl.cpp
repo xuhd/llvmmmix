@@ -52,19 +52,16 @@ namespace {
 		Value* hiBoundCk = builder.CreateICmpSLE(xVal, builder.getInt64(HiBound));
 		BasicBlock *boundsChecked = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
 		BasicBlock *boundsCheckFailed = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
-		BasicBlock *exit0 = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
 		builder.CreateCondBr(builder.CreateAnd(loBoundCk, hiBoundCk), boundsChecked, boundsCheckFailed);
 		builder.SetInsertPoint(boundsChecked);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, true);
 		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore), exit0);
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
 		builder.SetInsertPoint(boundsCheckFailed);
 		Function* h = (*vctx.Module).getFunction("HandleOverflow");
 		builder.CreateCall(h);
-		builder.CreateBr(exit0);
-		builder.SetInsertPoint(exit0);
 		builder.CreateBr(vctx.Exit);
 	}
 
@@ -80,9 +77,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
-		BasicBlock *exit0 = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore), exit0);
-		builder.SetInsertPoint(exit0);
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
 		builder.CreateBr(vctx.Exit);
 	}
 
@@ -98,9 +93,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, builder.CreateLShr(xVal, builder.getInt64(32)), false);
-		BasicBlock *exit0 = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore), exit0);
-		builder.SetInsertPoint(exit0);
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
 		builder.CreateBr(vctx.Exit);
 	}
 
@@ -116,9 +109,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
-		BasicBlock *exit0 = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore), exit0);
-		builder.SetInsertPoint(exit0);
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
 		builder.CreateBr(vctx.Exit);
 	}
 
