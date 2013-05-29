@@ -232,22 +232,22 @@ int _tmain(int argc, _TCHAR* argv[])
 	EE->addGlobalMapping(memGlob, &memPhys[0]);
 
 	uint8_t* dataPtr = &memPhys[0] + TEXT_SIZE;
-	dataPtr[32] = 0;
-	dataPtr[33] = 0;
-	dataPtr[34] = 0;
-	dataPtr[35] = 0;
-	dataPtr[36] = 0;
-	dataPtr[37] = 0;
-	dataPtr[38] = 0;
-	dataPtr[39] = 3;
-	dataPtr[40] = 0;
+	dataPtr[32] = 0x7f;
+	dataPtr[33] = 0xff;
+	dataPtr[34] = 0xff;
+	dataPtr[35] = 0xff;
+	dataPtr[36] = 0xff;
+	dataPtr[37] = 0xff;
+	dataPtr[38] = 0xff;
+	dataPtr[39] = 0xff;
+	dataPtr[40] = 0x0;
 	dataPtr[41] = 0;
 	dataPtr[42] = 0;
 	dataPtr[43] = 0;
 	dataPtr[44] = 0;
 	dataPtr[45] = 0;
 	dataPtr[46] = 0;
-	dataPtr[47] = 4;
+	dataPtr[47] = 0x1;
 
 	std::vector<uint32_t> att(4);
 	att[0] = 0;
