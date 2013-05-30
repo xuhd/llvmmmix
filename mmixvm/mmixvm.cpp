@@ -225,21 +225,25 @@ int _tmain(int argc, _TCHAR* argv[])
 	memPhys[0x109] = 0;
 	memPhys[0x10A] = 4;
 	memPhys[0x10B] = 5;
-	memPhys[0x10C] = MmixLlvm::STOI;
+	memPhys[0x10C] = MmixLlvm::SUBI;
 	memPhys[0x10D] = 0;
-	memPhys[0x10E] = 1;
-	memPhys[0x10F] = 64;
+	memPhys[0x10E] = 0;
+	memPhys[0x10F] = 1;
+	memPhys[0x110] = MmixLlvm::STOI;
+	memPhys[0x111] = 0;
+	memPhys[0x112] = 1;
+	memPhys[0x113] = 64;
 	EE->addGlobalMapping(memGlob, &memPhys[0]);
 
 	uint8_t* dataPtr = &memPhys[0] + TEXT_SIZE;
-	dataPtr[32] = 0x7f;
-	dataPtr[33] = 0xff;
-	dataPtr[34] = 0xff;
-	dataPtr[35] = 0xff;
-	dataPtr[36] = 0xff;
-	dataPtr[37] = 0xff;
-	dataPtr[38] = 0xff;
-	dataPtr[39] = 0xff;
+	dataPtr[32] = 0x0;
+	dataPtr[33] = 0x0;
+	dataPtr[34] = 0x0;
+	dataPtr[35] = 0x0;
+	dataPtr[36] = 0x0;
+	dataPtr[37] = 0x0;
+	dataPtr[38] = 0x0;
+	dataPtr[39] = 10;
 	dataPtr[40] = 0x0;
 	dataPtr[41] = 0;
 	dataPtr[42] = 0;
@@ -247,7 +251,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	dataPtr[44] = 0;
 	dataPtr[45] = 0;
 	dataPtr[46] = 0;
-	dataPtr[47] = 0x1;
+	dataPtr[47] = 20;
 
 	std::vector<uint32_t> att(4);
 	att[0] = 0;
@@ -271,10 +275,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::vector<GenericValue> noargs;
 
 	GenericValue gv = EE->runFunction(f, noargs);
-	gv = EE->runFunction(f, noargs);
-	gv = EE->runFunction(f, noargs);
-	gv = EE->runFunction(f, noargs);
-	gv = EE->runFunction(f, noargs);
 
 	// Import result of execution:
 	outs() << "Result: " << gv.IntVal << "\n";

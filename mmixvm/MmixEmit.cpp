@@ -149,7 +149,16 @@ namespace {
 			emitStcoi(vctx, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::ADD:
-			emitAdd(vctx, xarg, yarg, zarg);
+			emitAdd(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ADDI:
+			emitAdd(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::SUB:
+			emitSub(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::SUBI:
+			emitSub(vctx, xarg, yarg, zarg, true);
 			break;
 		default:
 			assert(0 && "Not implemented");
