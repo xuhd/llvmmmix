@@ -208,9 +208,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	arr[3] = 40;
 	EE->addGlobalMapping(registersGlob, &arr[0]);
 
-	uint64_t *spArr = new uint64_t[SPECIAL_REGISTERS];
-	memset(spArr, 0, sizeof(*spArr) * SPECIAL_REGISTERS);
-	EE->addGlobalMapping(specialRegistersGlob, spArr);
+	std::vector<uint64_t> spArr(SPECIAL_REGISTERS);
+	spArr[21] = 16;
+	EE->addGlobalMapping(specialRegistersGlob, &spArr[0]);
 	
 	std::vector<uint8_t> memPhys(MEM_ARR_SIZE);
 	memPhys[0x100] = MmixLlvm::LDO;
@@ -236,14 +236,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	EE->addGlobalMapping(memGlob, &memPhys[0]);
 
 	uint8_t* dataPtr = &memPhys[0] + TEXT_SIZE;
-	dataPtr[32] = 0x0;
-	dataPtr[33] = 0x0;
-	dataPtr[34] = 0x0;
-	dataPtr[35] = 0x0;
-	dataPtr[36] = 0x0;
-	dataPtr[37] = 0x0;
-	dataPtr[38] = 0x0;
-	dataPtr[39] = 10;
+	dataPtr[32] = 0x7f;
+	dataPtr[33] = 0xff;
+	dataPtr[34] = 0xff;
+	dataPtr[35] = 0xff;
+	dataPtr[36] = 0xff;
+	dataPtr[37] = 0xff;
+	dataPtr[38] = 0xff;
+	dataPtr[39] = 0xff;
 	dataPtr[40] = 0x0;
 	dataPtr[41] = 0;
 	dataPtr[42] = 0;
@@ -251,7 +251,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	dataPtr[44] = 0;
 	dataPtr[45] = 0;
 	dataPtr[46] = 0;
-	dataPtr[47] = 20;
+	dataPtr[47] = 1;
 
 	std::vector<uint32_t> att(4);
 	att[0] = 0;
@@ -272,9 +272,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	boost::tie(f, edgeList) = MmixLlvm::emitSimpleVertice(Context, *M, *accessor, 0x100);
 
 	outs() << "We just constructed this LLVM module:\n\n" << *M;
-	std::vector<GenericValue> noargs;
-
-	GenericValue gv = EE->runFunction(f, noargs);
+	uint64_t instrAddr, targetAddr;
+	std::vector<GenericValue> args(2);
+	args[0] = GenericValue(&instrAddr);
+	args[1] = GenericValue(&targetAddr);
+	GenericValue gv = EE->runFunction(f, args);
 
 	// Import result of execution:
 	outs() << "Result: " << gv.IntVal << "\n";

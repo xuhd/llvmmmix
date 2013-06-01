@@ -160,29 +160,21 @@ namespace {
 		case MmixLlvm::SUBI:
 			emitSub(vctx, xarg, yarg, zarg, true);
 			break;
+		case MmixLlvm::MUL:
+			emitMul(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::MULI:
+			emitMul(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::DIV:
+			emitDiv(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::DIVI:
+			emitDiv(vctx, xarg, yarg, zarg, true);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}
-	}
-
-	void emitEpilogue(VerticeContext& vctx) {
-		LLVMContext& ctx = *vctx.Ctx;
-		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(vctx.Exit);
-		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
-		RegistersMap& regMap = *vctx.RegMap;
-		for (RegistersMap::iterator itr = regMap.begin(); itr != regMap.end(); ++itr) {
-			if ((*itr).second.changed) {
-				Value* ix[2];
-				ix[0] = builder.getInt32(0);
-				ix[1] = builder.getInt32((*itr).first);
-				builder.CreateStore(
-					(*itr).second.value,
-					builder.CreatePointerCast(
-						builder.CreateGEP(registers, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
-			}
-		}
-		builder.CreateRetVoid();
 	}
 }
 
@@ -200,8 +192,10 @@ boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, 
 {
 	std::vector<std::string> twines;
 	RegistersMap regMap;
+	RegistersMap specialRegMap;
 	uint64_t xPtr0 = xPtr;
-	Function* f = cast<Function>(m.getOrInsertFunction(genUniq("fun").str(), Type::getVoidTy(ctx) , (Type *)0));
+	Function* f = cast<Function>(m.getOrInsertFunction(genUniq("fun").str(), Type::getVoidTy(ctx),
+		Type::getInt64PtrTy(ctx),Type::getInt64PtrTy(ctx), (Type *)0));
 	BasicBlock *verticeEntry = BasicBlock::Create(ctx, genUniq("entry") + Twine(xPtr), f);
 	std::vector<VerticeContext> oenv;
 	BasicBlock *block = verticeEntry;
@@ -214,6 +208,7 @@ boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, 
 		e.Function = f;
 		e.Module = &m;
 		e.RegMap = &regMap;
+		e.SpecialRegMap = &specialRegMap;
 		e.XPtr = xPtr0;
 		e.Instr = instr;
 		e.Entry = block;
@@ -223,13 +218,21 @@ boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, 
 		block = BasicBlock::Create(ctx, getInstrTwine(twines, e.Instr, e.XPtr), f);
 		xPtr0 += sizeof(uint32_t);
 	}
-	if (!oenv.empty())
-		oenv.back().Exit = BasicBlock::Create(ctx, genUniq("epilogue") + Twine(xPtr), f);
+
+	BasicBlock *mainExit = 0;
+
+	if (!oenv.empty()) {
+		mainExit = BasicBlock::Create(ctx, genUniq("epilogue") + Twine(xPtr), f);
+		oenv.back().Exit = mainExit;
+	}
 	
 	for (std::vector<VerticeContext>::iterator itr = oenv.begin(); itr != oenv.end(); ++itr)
 		emitInstruction(*itr);
 
-	if (!oenv.empty())
-		emitEpilogue(oenv.back());
+	if (!oenv.empty()) {
+		IRBuilder<> builder(ctx);
+		builder.SetInsertPoint(mainExit);
+		emitLeaveVertice(oenv.back(), builder, oenv.back().XPtr);
+	}
 	return boost::make_tuple(f, EdgeList());
 }

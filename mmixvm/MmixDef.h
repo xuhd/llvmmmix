@@ -47,4 +47,27 @@ namespace MmixLlvm {
 /*Ex#*/ ORH=0xE8,         ORMH=0xE9,       ORML=0xEA,     ORL=0xEB,       ANDNH=0xEC,      ANDNMH=0xED,   ANDNML=0xEE,    ANDNL=0xEF,
 /*Fx#*/ POP=0xF8,         RESUME=0xF9,     SAVE=0xFA,     UNSAVE=0xFB,    SYNC=0xFC,       SWYM=0xFD,     GET=0xFE,       TRIP=0xFF
     };
+
+	enum SpecialReg {
+		rA = 21,  rB = 0,   rC = 8,   rD = 1,
+        rE = 2,   rF = 22,  rG = 19,  rH = 3,
+        rI = 12,  rJ = 4,   rK = 15,  rL = 20,
+        rM = 5,   rN = 9,   rO = 10,  rP = 23,
+        rQ = 16,  rR = 6,   rS = 11,  rT = 13,
+        rU = 17,  rV = 18,  rW = 24,  rX = 25,
+        rY = 26,  rZ = 27,  rBB = 7,  rTT = 14,
+        rWW = 28, rXX = 29, rYY = 30, rZZ = 31,
+	};
+
+	// DVWIOUZX
+	enum ArithFlag {
+		X = 1,
+		Z = 1<<2,
+		U = 1<<3,
+		O = 1<<4,
+		I = 1<<5,
+		W = 1<<6,
+		V = 1<<7,
+		D = 1<<8
+	};
 };

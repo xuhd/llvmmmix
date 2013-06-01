@@ -37,9 +37,8 @@ namespace {
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
 		RegistersMap& regMap = *vctx.RegMap;
-		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
-		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
-		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
+		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
+		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 		Value* theA = makeA(vctx, builder, yVal, zVal);
 		Value* readVal = emitFetchMem(vctx, builder, theA);
 		Value* result = emitLoad(vctx, builder, readVal, isSigned);
@@ -56,9 +55,8 @@ namespace {
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
 		RegistersMap& regMap = *vctx.RegMap;
-		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
-		Value* yVal = emitRegisterLoad(ctx, builder, registers, regMap, yarg);
-		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(ctx, builder, registers, regMap, zarg);
+		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
+		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 		Value* theA = makeA(vctx, builder, yVal, zVal);
 		Value* readVal = emitFetchMem(vctx, builder, theA);
 		Value* result = builder.CreateShl(emitLoad(vctx, builder, readVal, false), builder.getInt64(32));
