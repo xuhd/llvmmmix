@@ -99,17 +99,17 @@ namespace {
 
 	template<> Value* EmitL<3>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)
 	{
-		return builder.CreateIntCast(emitAdjust64Endianness(builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
+		return builder.CreateIntCast(emitAdjust64Endianness(vctx, builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
 	}
 
 	template<> Value* EmitL<2>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)
 	{
-		return builder.CreateIntCast(emitAdjust32Endianness(builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
+		return builder.CreateIntCast(emitAdjust32Endianness(vctx, builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
 	}
 
 	template<> Value* EmitL<1>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)
 	{
-		return builder.CreateIntCast(emitAdjust16Endianness(builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
+		return builder.CreateIntCast(emitAdjust16Endianness(vctx, builder, readVal), Type::getInt64Ty(*vctx.Ctx), isSigned);
 	}
 
 	template<> Value* EmitL<0>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)

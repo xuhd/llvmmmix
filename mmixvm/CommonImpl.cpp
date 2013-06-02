@@ -27,8 +27,8 @@ namespace {
 	const uint64_t ADDR_MASK = ~(TWO_ENABLED_BITS << REGION_BIT_OFFSET);
 };
 
-Value* MmixLlvm::Private::emitAdjust64Endianness(IRBuilder<>& builder, Value* val) {
-	Value* b0 = builder.CreateLShr(val, builder.getInt64(56));
+Value* MmixLlvm::Private::emitAdjust64Endianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val) {
+	/*Value* b0 = builder.CreateLShr(val, builder.getInt64(56));
 	Value* b1 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(48)), builder.getInt64(0xFF));
 	Value* b2 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(40)), builder.getInt64(0xFF));
 	Value* b3 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(32)), builder.getInt64(0xFF));
@@ -43,11 +43,13 @@ Value* MmixLlvm::Private::emitAdjust64Endianness(IRBuilder<>& builder, Value* va
 	Value* q4 = builder.CreateOr(q3, builder.CreateShl(b3, builder.getInt64(24)));
 	Value* q5 = builder.CreateOr(q4, builder.CreateShl(b2, builder.getInt64(16)));
 	Value* q6 = builder.CreateOr(q5, builder.CreateShl(b1, builder.getInt64(8)));
-	Value* q7 = builder.CreateOr(q6, b0);
-	return q7;
+	Value* q7 = builder.CreateOr(q6, b0);*/
+	Function* f = (*vctx.Module).getFunction("Adjust64EndiannessImpl");
+	Value* args[] = { val };
+	return builder.CreateCall(f, ArrayRef<Value*>(args, args + 1));
 }
 
-Value* MmixLlvm::Private::emitAdjust32Endianness(IRBuilder<>& builder, Value* val) {
+Value* MmixLlvm::Private::emitAdjust32Endianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val) {
 	Value* b0 = builder.CreateLShr(val, builder.getInt32(24));
 	Value* b1 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt32(16)), builder.getInt32(0xFF));
 	Value* b2 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt32(8)), builder.getInt32(0xFF));
@@ -59,7 +61,7 @@ Value* MmixLlvm::Private::emitAdjust32Endianness(IRBuilder<>& builder, Value* va
 	return q3;
 }
 
-Value* MmixLlvm::Private::emitAdjust16Endianness(IRBuilder<>& builder, Value* val) {
+Value* MmixLlvm::Private::emitAdjust16Endianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val) {
 	Value* b0 = builder.CreateLShr(val, builder.getInt16(8));
 	Value* b1 = builder.CreateAnd(val, builder.getInt16(0xFF));
 	Value* q0 = builder.CreateShl(b1, builder.getInt16(8));

@@ -27,7 +27,7 @@ namespace {
 		const static int64_t LoBound = ~0i64 << ((1 << Pow2) * 8 - 1);
 		const static int64_t HiBound = -1i64 - LoBound;
 		static Value* makeA(LLVMContext& ctx, IRBuilder<>& builder, Value* yVal, Value* zVal);
-		static Value* adjustEndianness(IRBuilder<>& builder, Value* val);
+		static Value* adjustEndianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val);
 		static Value* createStoreCast(LLVMContext& ctx, IRBuilder<>& builder, Value* val, int isSigned);
 	public:
 		static void emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
@@ -62,7 +62,7 @@ namespace {
 		builder.CreateCondBr(builder.CreateAnd(loBoundCk, hiBoundCk), success, overflow);
 		builder.SetInsertPoint(success);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, true);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(overflow);
 		Value* overflowAlreadySet = 
@@ -94,7 +94,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(vctx.Exit);
 	}
 
@@ -109,7 +109,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, builder.CreateLShr(xVal, builder.getInt64(32)), false);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(vctx.Exit);
 	}
 
@@ -124,7 +124,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
 		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
+		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(vctx.Exit);
 	}
 
@@ -138,22 +138,22 @@ namespace {
 		return builder.CreateAnd(builder.CreateNot(builder.getInt64((1 << Pow2) - 1)), builder.CreateAdd(yVal, zVal));
 	}
 
-	template<> Value* EmitS<3>::adjustEndianness(IRBuilder<>& builder, Value* val)
+	template<> Value* EmitS<3>::adjustEndianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val)
 	{
-		return emitAdjust64Endianness(builder, val);
+		return emitAdjust64Endianness(vctx, builder, val);
 	}
 
-	template<> Value* EmitS<2>::adjustEndianness(IRBuilder<>& builder, Value* val)
+	template<> Value* EmitS<2>::adjustEndianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val)
 	{
-		return emitAdjust32Endianness(builder, val);
+		return emitAdjust32Endianness(vctx, builder, val);
 	}
 
-	template<> Value* EmitS<1>::adjustEndianness(IRBuilder<>& builder, Value* val)
+	template<> Value* EmitS<1>::adjustEndianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val)
 	{
-		return emitAdjust16Endianness(builder, val);
+		return emitAdjust16Endianness(vctx, builder, val);
 	}
 
-	template<> Value* EmitS<0>::adjustEndianness(IRBuilder<>& builder, Value* val)
+	template<> Value* EmitS<0>::adjustEndianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val)
 	{
 		return val;
 	}

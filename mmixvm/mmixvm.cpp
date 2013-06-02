@@ -42,16 +42,19 @@ namespace {
 		mpz_class arg2_((uint32_t)(arg2>>32));
 		arg2_<<=32;
 		arg2_ |= mpz_class((uint32_t)(arg2 & UINT32_MAX));
-		std::string a1_d = arg1_.get_str();
-		std::string a2_d = arg2_.get_str();
 		mpz_class prod_ = arg1_ * arg2_;
-		std::string prod_d = prod_.get_str();
 		mpz_class hiProd_ = prod_ >> 64;
-		std::string hiprod_d = hiProd_.get_str(16);
 		mpz_class loProd_ = prod_ & _64MAX;
-		std::string loprod_d = loProd_.get_str(16);
 		*hiProd = hiProd_.get_ux();
 		*loProd = loProd_.get_ux();
+	}
+
+	uint64_t Adjust64EndiannessImpl(uint64_t arg) {
+		uint8_t* ref = (uint8_t*)&arg;
+		return  ((uint64_t)ref[0] << 56) | ((uint64_t)ref[1] << 48)
+	          | ((uint64_t)ref[2] << 40) | ((uint64_t)ref[3] << 32)
+		      | ((uint64_t)ref[4] << 24) | ((uint64_t)ref[5] << 16)
+	          | ((uint64_t)ref[6] << 8)  |  (uint64_t)ref[7];
 	}
 
 	class MemAccessImpl : public MmixLlvm::MemAccessor {
@@ -155,7 +158,7 @@ namespace {
 		return ((uint64_t)ref[0] << 56) | ((uint64_t)ref[1] << 48)
 			 | ((uint64_t)ref[2] << 40) | ((uint64_t)ref[3] << 32)
 			 | ((uint64_t)ref[4] << 24) | ((uint64_t)ref[5] << 16)
-			 | ((uint64_t)ref[6] << 8)  | (uint64_t)ref[7] << 16;
+			 | ((uint64_t)ref[6] << 8)  |  (uint64_t)ref[7];
 	}
 };
 
@@ -210,6 +213,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		FunctionType::get(Type::getVoidTy(Context), ArrayRef<Type*>(params, params + 4), false), 
 		Function::ExternalLinkage, "MuluImpl", M);
 
+	params[0] = Type::getInt64Ty(Context);
+	llvm::Function* adjust64EndiannessImplF = llvm::Function::Create(
+		FunctionType::get(Type::getInt64Ty(Context), ArrayRef<Type*>(params, params + 1), false), 
+		Function::ExternalLinkage, "Adjust64EndiannessImpl", M);
+
 	params[0] = Type::getInt32Ty(Context);
 	llvm::Function* debugInt32 = llvm::Function::Create(
 		FunctionType::get(Type::getVoidTy(Context), ArrayRef<Type*>(params, params + 1), false), 
@@ -223,6 +231,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	boost::scoped_ptr<ExecutionEngine> EE(EngineBuilder(M).create());
 	EE->addGlobalMapping(muluImplF, &MuluImpl);
+	EE->addGlobalMapping(adjust64EndiannessImplF, &Adjust64EndiannessImpl);
 	EE->addGlobalMapping(debugInt32, &DebugInt32);
 	EE->addGlobalMapping(debugInt64, &DebugInt64);
 
@@ -308,16 +317,13 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	boost::tie(f, edgeList) = MmixLlvm::emitSimpleVertice(Context, *M, *accessor, 0x100);
 
-	outs() << "We just constructed this LLVM module:\n\n" << *M;
+	outs() << *M;
+	outs().flush();
 	uint64_t instrAddr, targetAddr;
 	std::vector<GenericValue> args(2);
 	args[0] = GenericValue(&instrAddr);
 	args[1] = GenericValue(&targetAddr);
 	GenericValue gv = EE->runFunction(f, args);
-
-	// Import result of execution:
-	outs() << "Result: " << gv.IntVal << "\n";
-	outs().flush();
 	EE->freeMachineCodeForFunction(f);
 	llvm_shutdown();
 	return 0;
