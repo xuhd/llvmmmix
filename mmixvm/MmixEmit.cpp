@@ -190,6 +190,12 @@ namespace {
 		case MmixLlvm::SUBI:
 			emitSub(vctx, xarg, yarg, zarg, true);
 			break;
+		case MmixLlvm::SUBU:
+			emitSubu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::SUBUI:
+			emitSubu(vctx, xarg, yarg, zarg, true);
+			break;
 		case MmixLlvm::MUL:
 			emitMul(vctx, xarg, yarg, zarg, false);
 			break;
@@ -201,6 +207,18 @@ namespace {
 			break;
 		case MmixLlvm::DIVI:
 			emitDiv(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::MULU:
+			emitMulu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::MULUI:
+			emitMulu(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::DIVU:
+			emitDivu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::DIVUI:
+			emitDivu(vctx, xarg, yarg, zarg, true);
 			break;
 		default:
 			assert(0 && "Not implemented");

@@ -9,6 +9,7 @@
 
 #include <tchar.h>
 #include <stdint.h>
+#include <gmpxx.h>
 #include <limits.h>
 #include <vector>
 #include <sstream>

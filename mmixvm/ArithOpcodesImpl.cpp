@@ -7,6 +7,7 @@ using llvm::LLVMContext;
 using llvm::Module;
 using llvm::Type;
 using llvm::PointerType;
+using llvm::IntegerType;
 using llvm::Value;
 using llvm::Function;
 using llvm::BasicBlock;
@@ -60,7 +61,7 @@ namespace {
 				                  builder.getInt64(0));
 		builder.CreateCondBr(overflowFlagCondition, exitViaTrip, setOverflowFlag);
 		builder.SetInsertPoint(setOverflowFlag);
-		Value* newRaVal = builder.CreateAnd(initRaVal, builder.CreateNot(builder.getInt64(MmixLlvm::V)));
+		Value* newRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(exitViaTrip);
 		emitLeaveVerticeViaTrip(vctx, builder, args[0], args[1], getArithTripVector(MmixLlvm::V));
@@ -218,4 +219,47 @@ void MmixLlvm::Private::emit8Addu(VerticeContext& vctx, uint8_t xarg, uint8_t ya
 void MmixLlvm::Private::emit16Addu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 {
 	EmitAU<4>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
+void MmixLlvm::Private::emitSubu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	RegistersMap& regMap = *vctx.RegMap;
+	RegistersMap& specialRegMap = *vctx.SpecialRegMap;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg); 
+	Value* zarg0 = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	Twine label = (immediate ? Twine("subu") : Twine("subui")) + Twine(yarg) + Twine(zarg);
+	Value* result = builder.CreateSub(yarg0, zarg0, label);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, result, true);
+}
+
+void MmixLlvm::Private::emitMulu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	RegistersMap& regMap = *vctx.RegMap;
+	RegistersMap& specialRegMap = *vctx.SpecialRegMap;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	Value* loProd = builder.CreateAlloca(Type::getInt64Ty(ctx));
+	Value* hiProd = builder.CreateAlloca(Type::getInt64Ty(ctx));
+	Value* callParams[] = {
+		emitRegisterLoad(vctx, builder, yarg),
+		immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg),
+		hiProd,
+		loProd
+	};
+	Twine label = (immediate ? Twine("mulu") : Twine("mului")) + Twine(yarg) + Twine(zarg);
+	builder.CreateCall((*vctx.Module).getFunction("MuluImpl"), ArrayRef<Value*>(callParams, callParams + 4));
+	Value* xval0 = builder.CreateLoad(loProd, false, label);
+	Value* rh = builder.CreateLoad(hiProd);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, xval0, true);
+	addSpecialRegisterToCache(vctx, MmixLlvm::rH, rh, true);
+}
+
+void MmixLlvm::Private::emitDivu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
 }

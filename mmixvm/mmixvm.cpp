@@ -33,6 +33,27 @@ namespace {
 		outs().flush();
 	}
 
+	const mpz_class _64MAX("FFFFFFFFFFFFFFFF", 16);
+
+	void MuluImpl(uint64_t arg1, uint64_t arg2, uint64_t* hiProd, uint64_t* loProd) {
+		mpz_class arg1_((uint32_t)(arg1>>32));
+		arg1_<<=32;
+		arg1_ |= mpz_class((uint32_t)(arg1 & UINT32_MAX));	
+		mpz_class arg2_((uint32_t)(arg2>>32));
+		arg2_<<=32;
+		arg2_ |= mpz_class((uint32_t)(arg2 & UINT32_MAX));
+		std::string a1_d = arg1_.get_str();
+		std::string a2_d = arg2_.get_str();
+		mpz_class prod_ = arg1_ * arg2_;
+		std::string prod_d = prod_.get_str();
+		mpz_class hiProd_ = prod_ >> 64;
+		std::string hiprod_d = hiProd_.get_str(16);
+		mpz_class loProd_ = prod_ & _64MAX;
+		std::string loprod_d = loProd_.get_str(16);
+		*hiProd = hiProd_.get_ux();
+		*loProd = loProd_.get_ux();
+	}
+
 	class MemAccessImpl : public MmixLlvm::MemAccessor {
 		const llvm::ArrayRef<uint8_t> _textRef;
 
@@ -180,11 +201,14 @@ int _tmain(int argc, _TCHAR* argv[])
 		0,
 		"AddressTranslateTable");
 	
-	llvm::Function* handleOverflowRef = llvm::Function::Create(
-		FunctionType::get(Type::getVoidTy(Context), false), 
-		Function::ExternalLinkage, "HandleOverflow", M);
-
-	Type* params[1];
+	Type* params[4];
+	params[0] = Type::getInt64Ty(Context);
+	params[1] = Type::getInt64Ty(Context);
+	params[2] = Type::getInt64PtrTy(Context);
+	params[3] = Type::getInt64PtrTy(Context);
+	llvm::Function* muluImplF = llvm::Function::Create(
+		FunctionType::get(Type::getVoidTy(Context), ArrayRef<Type*>(params, params + 4), false), 
+		Function::ExternalLinkage, "MuluImpl", M);
 
 	params[0] = Type::getInt32Ty(Context);
 	llvm::Function* debugInt32 = llvm::Function::Create(
@@ -198,7 +222,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		Function::ExternalLinkage, "DebugInt64", M);
 
 	boost::scoped_ptr<ExecutionEngine> EE(EngineBuilder(M).create());
-	EE->addGlobalMapping(handleOverflowRef, &HandleOverflow);
+	EE->addGlobalMapping(muluImplF, &MuluImpl);
 	EE->addGlobalMapping(debugInt32, &DebugInt32);
 	EE->addGlobalMapping(debugInt64, &DebugInt64);
 
@@ -221,37 +245,50 @@ int _tmain(int argc, _TCHAR* argv[])
 	memPhys[0x105] = 5;
 	memPhys[0x106] = 1;
 	memPhys[0x107] = 3;
-	memPhys[0x108] = MmixLlvm::_2ADDU;
-	memPhys[0x109] = 0;
-	memPhys[0x10A] = 4;
-	memPhys[0x10B] = 5;
-	memPhys[0x10C] = MmixLlvm::SUBI;
-	memPhys[0x10D] = 0;
-	memPhys[0x10E] = 0;
-	memPhys[0x10F] = 1;
-	memPhys[0x110] = MmixLlvm::STOI;
-	memPhys[0x111] = 0;
-	memPhys[0x112] = 1;
-	memPhys[0x113] = 64;
+	memPhys[0x108] = MmixLlvm::LDO;
+	memPhys[0x109] = 6;
+	memPhys[0x10a] = 1;
+	memPhys[0x10b] = 2;
+	memPhys[0x10c] = MmixLlvm::LDO;
+	memPhys[0x10d] = 7;
+	memPhys[0x10e] = 1;
+	memPhys[0x10f] = 3;
+	memPhys[0x110] = MmixLlvm::ADD;
+	memPhys[0x111] = 8;
+	memPhys[0x112] = 6;
+	memPhys[0x113] = 7;
+	memPhys[0x114] = MmixLlvm::MULU;
+	memPhys[0x115] = 0;
+	memPhys[0x116] = 4;
+	memPhys[0x117] = 5;
+	memPhys[0x118] = MmixLlvm::SUBI;
+	memPhys[0x119] = 0;
+	memPhys[0x11a] = 0;
+	memPhys[0x11b] = 1;
+	memPhys[0x11c] = MmixLlvm::STOI;
+	memPhys[0x11d] = 0;
+	memPhys[0x11e] = 1;
+	memPhys[0x11f] = 64;
 	EE->addGlobalMapping(memGlob, &memPhys[0]);
 
 	uint8_t* dataPtr = &memPhys[0] + TEXT_SIZE;
-	dataPtr[32] = 0x00;
-	dataPtr[33] = 0x00;
-	dataPtr[34] = 0x00;
-	dataPtr[35] = 0x00;
-	dataPtr[36] = 0x00;
-	dataPtr[37] = 0x00;
-	dataPtr[38] = 0x01;
-	dataPtr[39] = 0x00;
-	dataPtr[40] = 0x0;
-	dataPtr[41] = 0;
-	dataPtr[42] = 0;
-	dataPtr[43] = 0;
-	dataPtr[44] = 0;
-	dataPtr[45] = 0;
-	dataPtr[46] = 0;
-	dataPtr[47] = 13;
+	//#9e 37 79 b9 7f 4a 71 6
+	dataPtr[32] = 0x9e;
+	dataPtr[33] = 0x37;
+	dataPtr[34] = 0x79;
+	dataPtr[35] = 0xb9;
+	dataPtr[36] = 0x7f;
+	dataPtr[37] = 0x4a;
+	dataPtr[38] = 0x7c;
+	dataPtr[39] = 0x16;
+	dataPtr[40] = 0x9e;
+	dataPtr[41] = 0x37;
+	dataPtr[42] = 0x79;
+	dataPtr[43] = 0xb9;
+	dataPtr[44] = 0x7f;
+	dataPtr[45] = 0x4a;
+	dataPtr[46] = 0x7c;
+	dataPtr[47] = 0x16;
 
 	std::vector<uint32_t> att(4);
 	att[0] = 0;
