@@ -163,3 +163,59 @@ void MmixLlvm::Private::emitDiv(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	addSpecialRegisterToCache(vctx, MmixLlvm::rA, newRa, true);
 	addSpecialRegisterToCache(vctx, MmixLlvm::rR, remResult, true);
 }
+
+namespace {
+	template<int Pow2> class EmitAU
+	{
+		static Value* emitAdd(IRBuilder<>& builder, Value* yarg, Value* zarg, Twine& label);
+	public:
+		static void emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
+	};
+
+	Value* EmitAU<0>::emitAdd(IRBuilder<>& builder, Value* yarg, Value* zarg, Twine& label) {
+		return builder.CreateAdd(yarg, zarg, label);
+	}
+
+	template<int Pow2> Value* EmitAU<Pow2>::emitAdd(IRBuilder<>& builder, Value* yarg, Value* zarg, Twine& label) {
+		return builder.CreateAdd(builder.CreateShl(yarg, builder.getInt64(Pow2)), zarg, label);
+	}
+
+	template<int Pow2> void EmitAU<Pow2>::emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate) {
+		LLVMContext& ctx = *vctx.Ctx;
+		RegistersMap& regMap = *vctx.RegMap;
+		RegistersMap& specialRegMap = *vctx.SpecialRegMap;
+		IRBuilder<> builder(ctx);
+		builder.SetInsertPoint(vctx.Entry);
+		Value* yarg0 = emitRegisterLoad(vctx, builder, yarg); 
+		Value* zarg0 = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+		Twine label = Twine(1<<Pow2) + (immediate ? Twine("addui") : Twine("addu")) + Twine(yarg) + Twine(zarg);
+		Value* result = emitAdd(builder, yarg0, zarg0, label);
+		builder.CreateBr(vctx.Exit);
+		addRegisterToCache(vctx, xarg, result, true);
+	}
+};
+
+void MmixLlvm::Private::emitAddu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	EmitAU<0>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
+void MmixLlvm::Private::emit2Addu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	EmitAU<1>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
+void MmixLlvm::Private::emit4Addu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	EmitAU<2>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
+void MmixLlvm::Private::emit8Addu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	EmitAU<3>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
+void MmixLlvm::Private::emit16Addu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	EmitAU<4>::emit(vctx, xarg, yarg, zarg, immediate);
+}

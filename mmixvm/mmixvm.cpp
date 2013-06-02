@@ -221,14 +221,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	memPhys[0x105] = 5;
 	memPhys[0x106] = 1;
 	memPhys[0x107] = 3;
-	memPhys[0x108] = MmixLlvm::DIV;
+	memPhys[0x108] = MmixLlvm::_2ADDU;
 	memPhys[0x109] = 0;
 	memPhys[0x10A] = 4;
 	memPhys[0x10B] = 5;
 	memPhys[0x10C] = MmixLlvm::SUBI;
 	memPhys[0x10D] = 0;
 	memPhys[0x10E] = 0;
-	memPhys[0x10F] = 2;
+	memPhys[0x10F] = 1;
 	memPhys[0x110] = MmixLlvm::STOI;
 	memPhys[0x111] = 0;
 	memPhys[0x112] = 1;

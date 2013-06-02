@@ -154,6 +154,36 @@ namespace {
 		case MmixLlvm::ADDI:
 			emitAdd(vctx, xarg, yarg, zarg, true);
 			break;
+		case MmixLlvm::ADDU:
+			emitAddu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ADDUI:
+			emitAddu(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::_2ADDU:
+			emit2Addu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::_2ADDUI:
+			emit2Addu(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::_4ADDU:
+			emit4Addu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::_4ADDUI:
+			emit4Addu(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::_8ADDU:
+			emit8Addu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::_8ADDUI:
+			emit8Addu(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::_16ADDU:
+			emit16Addu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::_16ADDUI:
+			emit16Addu(vctx, xarg, yarg, zarg, true);
+			break;
 		case MmixLlvm::SUB:
 			emitSub(vctx, xarg, yarg, zarg, false);
 			break;
