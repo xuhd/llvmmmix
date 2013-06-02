@@ -14,6 +14,7 @@ using llvm::IRBuilder;
 using llvm::ArrayRef;
 using llvm::SwitchInst;
 using llvm::Twine;
+using llvm::PHINode; 
 using llvm::Intrinsic::ID;
 
 using namespace MmixLlvm::Util;
@@ -22,17 +23,6 @@ using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
 
 namespace {
-	void emitSetArithFlag(VerticeContext& vctx, IRBuilder<>& builder, Value* raIref, MmixLlvm::ArithFlag flag, bool val) {
-		RegistersMap& sregMap = *vctx.SpecialRegMap;
-		Value* ra = builder.CreateLoad(raIref);
-		Value* newVal;
-		if (val)
-			newVal = builder.CreateOr(ra, builder.getInt64(flag));
-		else
-			newVal = builder.CreateAnd(ra, builder.CreateNot(builder.getInt64(flag)));
-		builder.CreateStore(newVal, raIref);
-	}
-
 	void emitIntrinsicOp(VerticeContext& vctx, ID id, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate) {
 		LLVMContext& ctx = *vctx.Ctx;
 		RegistersMap& regMap = *vctx.RegMap;
@@ -55,36 +45,35 @@ namespace {
 		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
 		uint32_t idx[1];
 		idx[0] = 1;
-		Value* iref = builder.CreateAlloca(Type::getInt64Ty(ctx));
-		builder.CreateStore(emitRegisterLoad(vctx, builder, xarg), iref);
-		Value* arithFlagsIref = builder.CreateAlloca(Type::getInt64Ty(ctx));
-		builder.CreateStore(emitSpecialRegisterLoad(vctx, builder, MmixLlvm::SpecialReg::rA), arithFlagsIref);
+		Value* initRaVal = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rA);
 		Value* overflowFlag = builder.CreateExtractValue(resStruct, ArrayRef<uint32_t>(idx, idx + 1), "overflowFlag");
 		builder.CreateCondBr(overflowFlag, overflow, success);
 		builder.SetInsertPoint(success);
 		idx[0] = 0;
 		Value* addResult = builder.CreateExtractValue(resStruct, ArrayRef<uint32_t>(idx, idx + 1), "arith" + Twine(yarg) + Twine(zarg));
-		builder.CreateStore(addResult, iref);
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(overflow);
-		Value* overflowFlagCondition = emitQueryArithFlag(vctx, builder, MmixLlvm::ArithFlag::O);
+		Value* initXRegVal = emitRegisterLoad(vctx, builder, xarg);
+		Value* overflowFlagCondition = 
+			builder.CreateICmpNE(
+				builder.CreateAnd(initRaVal, builder.getInt64(MmixLlvm::V)),
+				                  builder.getInt64(0));
 		builder.CreateCondBr(overflowFlagCondition, exitViaTrip, setOverflowFlag);
 		builder.SetInsertPoint(setOverflowFlag);
-		emitSetArithFlag(vctx, builder, arithFlagsIref, MmixLlvm::ArithFlag::O, true);
+		Value* newRaVal = builder.CreateAnd(initRaVal, builder.CreateNot(builder.getInt64(MmixLlvm::V)));
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(exitViaTrip);
-		emitLeaveVerticeViaTrip(vctx, builder, args[0], args[1], getArithTripVector(MmixLlvm::ArithFlag::O));
+		emitLeaveVerticeViaTrip(vctx, builder, args[0], args[1], getArithTripVector(MmixLlvm::V));
 		builder.SetInsertPoint(epilogue);
-		Value* result = builder.CreateLoad(iref, false);
-		Value* ra = builder.CreateLoad(arithFlagsIref, false);
+		PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+		(*result).addIncoming(addResult, success);
+		(*result).addIncoming(initXRegVal, setOverflowFlag);
+		PHINode* ra = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+		(*ra).addIncoming(initRaVal, success);
+		(*ra).addIncoming(newRaVal, setOverflowFlag);
 		builder.CreateBr(vctx.Exit);
-		RegisterRecord r0;
-		r0.value = result;
-		r0.changed = true;
-		regMap[xarg] = r0;
-		r0.value = ra;
-		r0.changed = true;
-		sregMap[MmixLlvm::SpecialReg::rA] = r0;
+		addRegisterToCache(vctx, xarg, result, true);
+		addSpecialRegisterToCache(vctx, MmixLlvm::rA, ra, true);
 	}
 };
 
@@ -112,38 +101,65 @@ void MmixLlvm::Private::emitDiv(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	builder.SetInsertPoint(vctx.Entry);
 	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg); 
 	Value* zarg0 = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
-	BasicBlock *dividerOkay1 = BasicBlock::Create(ctx, genUniq("divider_okay_1"), vctx.Function);
-	BasicBlock *dividerOkay2 = BasicBlock::Create(ctx, genUniq("divider_okay_2"), vctx.Function);
+	BasicBlock *success = BasicBlock::Create(ctx, genUniq("success"), vctx.Function);
+	BasicBlock *keepPrecondOnError = BasicBlock::Create(ctx, genUniq("keep_precond_on_error"), vctx.Function);
 	BasicBlock *overflow = BasicBlock::Create(ctx, genUniq("overflow"), vctx.Function);
 	BasicBlock *divByZero = BasicBlock::Create(ctx, genUniq("div_by_zero"), vctx.Function);
+	BasicBlock *setOverflowFlag = BasicBlock::Create(ctx, genUniq("set_overflow_flag"), vctx.Function);
+	BasicBlock *setDivideByZeroFlag = BasicBlock::Create(ctx, genUniq("set_divide_by_zero_flag"), vctx.Function);
+	BasicBlock *exitViaOverflowTrip = BasicBlock::Create(ctx, genUniq("exit_via_overflow_trip"), vctx.Function);
+	BasicBlock *exitViaDivideByZeroTrip = BasicBlock::Create(ctx, genUniq("exit_via_divide_by_zero_trip"), vctx.Function);
 	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
-	Value *iprodref = builder.CreateAlloca(Type::getInt64Ty(ctx));
-	Value *iremref = builder.CreateAlloca(Type::getInt64Ty(ctx));
-	builder.CreateStore(emitRegisterLoad(vctx, builder, xarg), iprodref);
-	builder.CreateStore(emitSpecialRegisterLoad(vctx, builder, rR), iremref);
+	Value* initRaVal = emitSpecialRegisterLoad(vctx, builder, rA);
 	Value* overflowFlag = builder.CreateAnd(builder.CreateICmpEQ(yarg0, builder.getInt64(~0i64)), 
 		builder.CreateICmpEQ(zarg0, builder.getInt64(-1i64)));
-	builder.CreateCondBr(overflowFlag, overflow, dividerOkay1);
-	builder.SetInsertPoint(dividerOkay1);
 	Value* divideByZeroFlag = builder.CreateICmpEQ(zarg0, builder.getInt64(0i64));
-	builder.CreateCondBr(divideByZeroFlag, divByZero, dividerOkay2);
-	builder.SetInsertPoint(dividerOkay2);
-	builder.CreateStore(builder.CreateSDiv(yarg0, zarg0), iprodref);
-	builder.CreateStore(builder.CreateSRem(yarg0, zarg0), iremref);
+	builder.CreateCondBr(builder.CreateOr(overflowFlag, divideByZeroFlag), keepPrecondOnError, success);
+	builder.SetInsertPoint(success);
+	Value* quotient = builder.CreateSDiv(yarg0, zarg0);
+	Value* remainder = builder.CreateSRem(yarg0, zarg0);
 	builder.CreateBr(epilogue);
+	builder.SetInsertPoint(keepPrecondOnError);
+	Value* initXRegVal = emitRegisterLoad(vctx, builder, xarg);
+	Value* initRrVal = emitSpecialRegisterLoad(vctx, builder, rR);
+	builder.CreateCondBr(divideByZeroFlag, divByZero, overflow);
 	builder.SetInsertPoint(overflow);
+	Value* overflowAlreadySet = 
+			builder.CreateICmpNE(
+				builder.CreateAnd(initRaVal, builder.getInt64(MmixLlvm::V)),
+				                  builder.getInt64(0));
+	builder.CreateCondBr(overflowAlreadySet, exitViaOverflowTrip, setOverflowFlag);
+	builder.SetInsertPoint(setOverflowFlag);
+	Value* overflowRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
 	builder.CreateBr(epilogue);
-	builder.SetInsertPoint(divByZero);	
+	builder.SetInsertPoint(exitViaOverflowTrip);
+	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, getArithTripVector(MmixLlvm::V));
+	builder.SetInsertPoint(divByZero);
+	Value* divideByZeroAlreadySet = 
+		builder.CreateICmpNE(
+			builder.CreateAnd(initRaVal, builder.getInt64(MmixLlvm::D)),
+				              builder.getInt64(0));
+	builder.CreateCondBr(divideByZeroAlreadySet, exitViaDivideByZeroTrip, setDivideByZeroFlag);
+	builder.SetInsertPoint(setDivideByZeroFlag);
+	Value* divideByZeroRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::D));
 	builder.CreateBr(epilogue);
+	builder.SetInsertPoint(exitViaDivideByZeroTrip);
+	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, getArithTripVector(MmixLlvm::D));
 	builder.SetInsertPoint(epilogue);
-	Value* prodResult = builder.CreateLoad(iprodref, false);
-	Value* remResult = builder.CreateLoad(iremref, false);
+	PHINode* quotResult = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*quotResult).addIncoming(quotient, success);
+	(*quotResult).addIncoming(initXRegVal, setOverflowFlag);
+	(*quotResult).addIncoming(initXRegVal, setDivideByZeroFlag);
+	PHINode* remResult = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*remResult).addIncoming(remainder, success);
+	(*remResult).addIncoming(initRrVal, setOverflowFlag);
+	(*remResult).addIncoming(initRrVal, setDivideByZeroFlag);
+	PHINode* newRa = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*newRa).addIncoming(initRaVal, success);
+	(*newRa).addIncoming(overflowRaVal, setOverflowFlag);
+	(*newRa).addIncoming(divideByZeroRaVal, setDivideByZeroFlag);
 	builder.CreateBr(vctx.Exit);
-	RegisterRecord r0, r1;
-	r0.value = prodResult;
-	r0.changed = true;
-	regMap[xarg] = r0;
-	r1.value = remResult;
-	r1.changed = true;
-	specialRegMap[rR] = r1;
+	addRegisterToCache(vctx, xarg, quotResult, true);
+	addSpecialRegisterToCache(vctx, MmixLlvm::rA, newRa, true);
+	addSpecialRegisterToCache(vctx, MmixLlvm::rR, remResult, true);
 }

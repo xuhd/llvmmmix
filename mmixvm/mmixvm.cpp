@@ -209,7 +209,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	EE->addGlobalMapping(registersGlob, &arr[0]);
 
 	std::vector<uint64_t> spArr(SPECIAL_REGISTERS);
-	spArr[21] = 16;
+	spArr[21] = 0; //MmixLlvm::V;
 	EE->addGlobalMapping(specialRegistersGlob, &spArr[0]);
 	
 	std::vector<uint8_t> memPhys(MEM_ARR_SIZE);
@@ -221,14 +221,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	memPhys[0x105] = 5;
 	memPhys[0x106] = 1;
 	memPhys[0x107] = 3;
-	memPhys[0x108] = MmixLlvm::ADD;
+	memPhys[0x108] = MmixLlvm::DIV;
 	memPhys[0x109] = 0;
 	memPhys[0x10A] = 4;
 	memPhys[0x10B] = 5;
 	memPhys[0x10C] = MmixLlvm::SUBI;
 	memPhys[0x10D] = 0;
 	memPhys[0x10E] = 0;
-	memPhys[0x10F] = 1;
+	memPhys[0x10F] = 2;
 	memPhys[0x110] = MmixLlvm::STOI;
 	memPhys[0x111] = 0;
 	memPhys[0x112] = 1;
@@ -236,14 +236,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	EE->addGlobalMapping(memGlob, &memPhys[0]);
 
 	uint8_t* dataPtr = &memPhys[0] + TEXT_SIZE;
-	dataPtr[32] = 0x7f;
-	dataPtr[33] = 0xff;
-	dataPtr[34] = 0xff;
-	dataPtr[35] = 0xff;
-	dataPtr[36] = 0xff;
-	dataPtr[37] = 0xff;
-	dataPtr[38] = 0xff;
-	dataPtr[39] = 0xff;
+	dataPtr[32] = 0x00;
+	dataPtr[33] = 0x00;
+	dataPtr[34] = 0x00;
+	dataPtr[35] = 0x00;
+	dataPtr[36] = 0x00;
+	dataPtr[37] = 0x00;
+	dataPtr[38] = 0x01;
+	dataPtr[39] = 0x00;
 	dataPtr[40] = 0x0;
 	dataPtr[41] = 0;
 	dataPtr[42] = 0;
@@ -251,7 +251,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	dataPtr[44] = 0;
 	dataPtr[45] = 0;
 	dataPtr[46] = 0;
-	dataPtr[47] = 1;
+	dataPtr[47] = 13;
 
 	std::vector<uint32_t> att(4);
 	att[0] = 0;

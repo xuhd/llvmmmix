@@ -81,12 +81,8 @@ namespace {
 			retVal = builder.CreateLoad(
 				builder.CreatePointerCast(
 				builder.CreateGEP(regGlob, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)), false, Twine("reg")+Twine(reg));
-			if (cache) {
-				RegisterRecord r0;
-				r0.value = retVal;
-				r0.changed = false;
-				regMap[reg] = r0;
-			}
+			if (cache)
+				addRegisterToCache(vctx, reg, retVal, false);
 		} else {
 			retVal = (*itr).second.value;
 		}
@@ -118,6 +114,22 @@ namespace {
 		return retVal;
 	}
 };
+
+void MmixLlvm::Private::addRegisterToCache(VerticeContext& vctx, uint8_t reg, Value* val, bool markDirty) {
+	RegistersMap& regMap = *vctx.RegMap;
+	RegisterRecord r0;
+	r0.value = val;
+	r0.changed = markDirty;
+	regMap[reg] = r0;
+}
+
+void MmixLlvm::Private::addSpecialRegisterToCache(VerticeContext& vctx, uint8_t reg, Value* val, bool markDirty) {
+	RegistersMap& sregMap = *vctx.SpecialRegMap;
+	RegisterRecord r0;
+	r0.value = val;
+	r0.changed = markDirty;
+	sregMap[reg] = r0;
+}
 
 Value* MmixLlvm::Private::emitRegisterLoad(VerticeContext& vctx, IRBuilder<>& builder, uint8_t reg) {
 	return emitRegisterLoadImpl(vctx, builder, reg, true);
@@ -176,15 +188,15 @@ void MmixLlvm::Private::emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBu
 	RegisterRecord r0;
 	r0.changed = true;
 	r0.value = emitRegisterLoadImpl(vctx, builder, 255, false);
-	sregMap[MmixLlvm::SpecialReg::rB] = r0;
-	r0.value = emitSpecialRegisterLoadImpl(vctx, builder, MmixLlvm::SpecialReg::rJ, false);
+	sregMap[MmixLlvm::rB] = r0;
+	r0.value = emitSpecialRegisterLoadImpl(vctx, builder, MmixLlvm::rJ, false);
 	regMap[255] = r0;
 	r0.value = builder.CreateOr(builder.CreateShl(builder.getInt64(1), 63), builder.getInt64(vctx.Instr));
-	sregMap[MmixLlvm::SpecialReg::rX] = r0;
+	sregMap[MmixLlvm::rX] = r0;
 	r0.value = rY;
-	sregMap[MmixLlvm::SpecialReg::rY] = r0;
+	sregMap[MmixLlvm::rY] = r0;
 	r0.value = rZ;
-	sregMap[MmixLlvm::SpecialReg::rZ] = r0;
+	sregMap[MmixLlvm::rZ] = r0;
 	emitLeaveVerticeImpl(vctx, builder, regMap, sregMap, target);
 }
 
@@ -234,21 +246,21 @@ void MmixLlvm::Private::emitStoreMem(LLVMContext& ctx, Module& m, Function& f,
 
 uint64_t MmixLlvm::Private::getArithTripVector(MmixLlvm::ArithFlag flag) {
 	switch (flag) {
-	case MmixLlvm::ArithFlag::X:
+	case MmixLlvm::X:
 		return 128;
-	case MmixLlvm::ArithFlag::Z:
+	case MmixLlvm::Z:
 		return 112;
-	case MmixLlvm::ArithFlag::U:
+	case MmixLlvm::U:
 		return 96;
-	case MmixLlvm::ArithFlag::O:
+	case MmixLlvm::O:
 		return 80;
-	case MmixLlvm::ArithFlag::I:
+	case MmixLlvm::I:
 		return 64;
-	case MmixLlvm::ArithFlag::W:
+	case MmixLlvm::W:
 		return 48;
-	case MmixLlvm::ArithFlag::V:
+	case MmixLlvm::V:
 		return 32;
-	case MmixLlvm::ArithFlag::D:
+	case MmixLlvm::D:
 		return 16;
 	default:
 		return 0;

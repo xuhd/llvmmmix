@@ -8,6 +8,7 @@ using llvm::Module;
 using llvm::Type;
 using llvm::PointerType;
 using llvm::Value;
+using llvm::PHINode;
 using llvm::Function;
 using llvm::BasicBlock;
 using llvm::IRBuilder;
@@ -49,19 +50,37 @@ namespace {
 		Value* xVal = emitRegisterLoad(vctx, builder, xarg);
 		Value* loBoundCk = builder.CreateICmpSGE(xVal, builder.getInt64(LoBound));
 		Value* hiBoundCk = builder.CreateICmpSLE(xVal, builder.getInt64(HiBound));
-		BasicBlock *boundsChecked = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
-		BasicBlock *boundsCheckFailed = BasicBlock::Create(ctx, genUniq("block"), vctx.Function);
-		builder.CreateCondBr(builder.CreateAnd(loBoundCk, hiBoundCk), boundsChecked, boundsCheckFailed);
-		builder.SetInsertPoint(boundsChecked);
-		Value* valToStore = createStoreCast(ctx, builder, xVal, true);
+		BasicBlock *success = BasicBlock::Create(ctx, genUniq("success"), vctx.Function);
+		BasicBlock *overflow = BasicBlock::Create(ctx, genUniq("overflow"), vctx.Function);
+		BasicBlock *setOverflowFlag = BasicBlock::Create(ctx, genUniq("set_overflow_flag"), vctx.Function);
+		BasicBlock *exitViaOverflowTrip = BasicBlock::Create(ctx, genUniq("exit_via_overflow_trip"), vctx.Function);
+		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
+		Value* initRaVal = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rA);
 		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 		Value* theA = makeA(ctx, builder, yVal, zVal);
+		builder.CreateCondBr(builder.CreateAnd(loBoundCk, hiBoundCk), success, overflow);
+		builder.SetInsertPoint(success);
+		Value* valToStore = createStoreCast(ctx, builder, xVal, true);
 		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(builder, valToStore));
-		builder.SetInsertPoint(boundsCheckFailed);
-		Function* h = (*vctx.Module).getFunction("HandleOverflow");
-		builder.CreateCall(h);
+		builder.CreateBr(epilogue);
+		builder.SetInsertPoint(overflow);
+		Value* overflowAlreadySet = 
+			builder.CreateICmpNE(
+				builder.CreateAnd(initRaVal, builder.getInt64(MmixLlvm::V)),
+				                  builder.getInt64(0));
+		builder.CreateCondBr(overflowAlreadySet, exitViaOverflowTrip, setOverflowFlag);
+		builder.SetInsertPoint(setOverflowFlag);
+		Value* overflowRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
+		builder.CreateBr(epilogue);
+		builder.SetInsertPoint(exitViaOverflowTrip);
+		emitLeaveVerticeViaTrip(vctx, builder, theA, xVal, getArithTripVector(MmixLlvm::V));
+		builder.SetInsertPoint(epilogue);
+		PHINode* ra = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+		(*ra).addIncoming(initRaVal, success);
+		(*ra).addIncoming(overflowRaVal, setOverflowFlag);
 		builder.CreateBr(vctx.Exit);
+		addSpecialRegisterToCache(vctx, MmixLlvm::rA, ra, true);
 	}
 
 	template<int Pow2> void EmitS<Pow2>::emitu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
