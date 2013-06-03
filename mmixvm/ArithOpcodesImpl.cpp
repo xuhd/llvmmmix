@@ -26,8 +26,6 @@ using MmixLlvm::Private::RegistersMap;
 namespace {
 	void emitIntrinsicOp(VerticeContext& vctx, ID id, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate) {
 		LLVMContext& ctx = *vctx.Ctx;
-		RegistersMap& regMap = *vctx.RegMap;
-		RegistersMap& sregMap = *vctx.SpecialRegMap;
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
 		Type* intrinsicArgs[] = { Type::getInt64Ty(ctx) };
@@ -96,8 +94,6 @@ void MmixLlvm::Private::emitMul(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 void MmixLlvm::Private::emitDiv(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 {
 	LLVMContext& ctx = *vctx.Ctx;
-	RegistersMap& regMap = *vctx.RegMap;
-	RegistersMap& specialRegMap = *vctx.SpecialRegMap;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
 	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg); 
@@ -183,8 +179,6 @@ namespace {
 
 	template<int Pow2> void EmitAU<Pow2>::emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate) {
 		LLVMContext& ctx = *vctx.Ctx;
-		RegistersMap& regMap = *vctx.RegMap;
-		RegistersMap& specialRegMap = *vctx.SpecialRegMap;
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
 		Value* yarg0 = emitRegisterLoad(vctx, builder, yarg); 
@@ -224,8 +218,6 @@ void MmixLlvm::Private::emit16Addu(VerticeContext& vctx, uint8_t xarg, uint8_t y
 void MmixLlvm::Private::emitSubu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 {
 	LLVMContext& ctx = *vctx.Ctx;
-	RegistersMap& regMap = *vctx.RegMap;
-	RegistersMap& specialRegMap = *vctx.SpecialRegMap;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
 	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg); 
@@ -239,8 +231,6 @@ void MmixLlvm::Private::emitSubu(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 void MmixLlvm::Private::emitMulu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 {
 	LLVMContext& ctx = *vctx.Ctx;
-	RegistersMap& regMap = *vctx.RegMap;
-	RegistersMap& specialRegMap = *vctx.SpecialRegMap;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
 	Value* loProd = builder.CreateAlloca(Type::getInt64Ty(ctx));
@@ -262,4 +252,39 @@ void MmixLlvm::Private::emitMulu(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 
 void MmixLlvm::Private::emitDivu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 {
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	BasicBlock *simpleCase = BasicBlock::Create(ctx, genUniq("simple_case"), vctx.Function);
+	BasicBlock *fullCase = BasicBlock::Create(ctx, genUniq("full_case"), vctx.Function);
+	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
+	Value* yreg = emitRegisterLoad(vctx, builder, yarg);
+	Value* rd = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rD);
+	Value* zreg = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	Value* rdGreaterThanZreg = builder.CreateICmpUGE(rd, zreg);
+	builder.CreateCondBr(rdGreaterThanZreg, simpleCase, fullCase);
+	builder.SetInsertPoint(simpleCase);
+	builder.CreateBr(epilogue);
+	builder.SetInsertPoint(fullCase);
+	Value* quotPtr = builder.CreateAlloca(Type::getInt64Ty(ctx));
+	Value* remPtr = builder.CreateAlloca(Type::getInt64Ty(ctx));
+	Value* callParams[] = {
+		rd, yreg, zreg, quotPtr, remPtr
+	};
+	Twine labelq = (immediate ? Twine("divu_q") : Twine("divui_q")) + Twine(yarg) + Twine(zarg);
+	Twine labelr = (immediate ? Twine("divu_r") : Twine("divui_r")) + Twine(yarg) + Twine(zarg);
+	builder.CreateCall((*vctx.Module).getFunction("DivuImpl"), ArrayRef<Value*>(callParams, callParams + 5));
+	Value* quotient = builder.CreateLoad(quotPtr, labelq);
+	Value* remainder = builder.CreateLoad(remPtr, labelr);
+	builder.CreateBr(epilogue);
+	builder.SetInsertPoint(epilogue);
+	PHINode* quotResult = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*quotResult).addIncoming(quotient, fullCase);
+	(*quotResult).addIncoming(rd, simpleCase);
+	PHINode* remResult = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*remResult).addIncoming(remainder, fullCase);
+	(*remResult).addIncoming(yreg, simpleCase);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, quotResult, true);
+	addSpecialRegisterToCache(vctx, MmixLlvm::rR, remResult, true);
 }

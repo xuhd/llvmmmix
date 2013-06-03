@@ -35,18 +35,31 @@ namespace {
 
 	const mpz_class _64MAX("FFFFFFFFFFFFFFFF", 16);
 
-	void MuluImpl(uint64_t arg1, uint64_t arg2, uint64_t* hiProd, uint64_t* loProd) {
-		mpz_class arg1_((uint32_t)(arg1>>32));
-		arg1_<<=32;
-		arg1_ |= mpz_class((uint32_t)(arg1 & UINT32_MAX));	
-		mpz_class arg2_((uint32_t)(arg2>>32));
-		arg2_<<=32;
-		arg2_ |= mpz_class((uint32_t)(arg2 & UINT32_MAX));
+	void MuluImpl(uint64_t arg1, uint64_t arg2, uint64_t* hiProd, uint64_t* loProd)
+	{
+		mpz_class arg1_ = (mpz_class((uint32_t)(arg1 >> 32)) << 32)
+						   | mpz_class((uint32_t)(arg1 & UINT32_MAX));
+		mpz_class arg2_ = (mpz_class((uint32_t)(arg2 >> 32)) << 32)
+						   | mpz_class((uint32_t)(arg2 & UINT32_MAX));
 		mpz_class prod_ = arg1_ * arg2_;
 		mpz_class hiProd_ = prod_ >> 64;
 		mpz_class loProd_ = prod_ & _64MAX;
 		*hiProd = hiProd_.get_ux();
 		*loProd = loProd_.get_ux();
+	}
+
+	void DivuImpl(uint64_t hidivident, uint64_t lodivident, uint64_t divisor, uint64_t* quotient, uint64_t* remainder) 
+	{
+		mpz_class divident_ = (mpz_class((uint32_t)(hidivident>>32)) << 96) 
+			                   | (mpz_class((uint32_t)(hidivident & UINT32_MAX)) << 64)
+						       | (mpz_class((uint32_t)(lodivident >> 32)) << 32)
+						       | mpz_class((uint32_t)(lodivident & UINT32_MAX));
+		mpz_class divisor_ = (mpz_class((uint32_t)(divisor >> 32)) << 32)
+						       | mpz_class((uint32_t)(divisor & UINT32_MAX));
+		mpz_class quotient_ = divident_ / divisor_;
+		mpz_class remainder_ = divident_ % divisor_;
+		*quotient = quotient_.get_ux();
+		*remainder = remainder_.get_ux();
 	}
 
 	uint64_t Adjust64EndiannessImpl(uint64_t arg) {
@@ -203,8 +216,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		GlobalValue::CommonLinkage,
 		0,
 		"AddressTranslateTable");
-	
-	Type* params[4];
+	addressTranslateTableGlob->setAlignment(8);
+
+	Type* params[5];
 	params[0] = Type::getInt64Ty(Context);
 	params[1] = Type::getInt64Ty(Context);
 	params[2] = Type::getInt64PtrTy(Context);
@@ -212,6 +226,15 @@ int _tmain(int argc, _TCHAR* argv[])
 	llvm::Function* muluImplF = llvm::Function::Create(
 		FunctionType::get(Type::getVoidTy(Context), ArrayRef<Type*>(params, params + 4), false), 
 		Function::ExternalLinkage, "MuluImpl", M);
+
+	params[0] = Type::getInt64Ty(Context);
+	params[1] = Type::getInt64Ty(Context);
+	params[2] = Type::getInt64Ty(Context);
+	params[3] = Type::getInt64PtrTy(Context);
+	params[4] = Type::getInt64PtrTy(Context);
+	llvm::Function* divuImplF = llvm::Function::Create(
+		FunctionType::get(Type::getVoidTy(Context), ArrayRef<Type*>(params, params + 5), false), 
+		Function::ExternalLinkage, "DivuImpl", M);
 
 	params[0] = Type::getInt64Ty(Context);
 	llvm::Function* adjust64EndiannessImplF = llvm::Function::Create(
@@ -231,6 +254,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	boost::scoped_ptr<ExecutionEngine> EE(EngineBuilder(M).create());
 	EE->addGlobalMapping(muluImplF, &MuluImpl);
+	EE->addGlobalMapping(divuImplF, &DivuImpl);
 	EE->addGlobalMapping(adjust64EndiannessImplF, &Adjust64EndiannessImpl);
 	EE->addGlobalMapping(debugInt32, &DebugInt32);
 	EE->addGlobalMapping(debugInt64, &DebugInt64);
@@ -242,7 +266,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	EE->addGlobalMapping(registersGlob, &arr[0]);
 
 	std::vector<uint64_t> spArr(SPECIAL_REGISTERS);
-	spArr[21] = 0; //MmixLlvm::V;
+	spArr[MmixLlvm::rA] = 0; //MmixLlvm::V;
+	spArr[MmixLlvm::rD] = 1;
 	EE->addGlobalMapping(specialRegistersGlob, &spArr[0]);
 	
 	std::vector<uint8_t> memPhys(MEM_ARR_SIZE);
@@ -266,7 +291,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	memPhys[0x111] = 8;
 	memPhys[0x112] = 6;
 	memPhys[0x113] = 7;
-	memPhys[0x114] = MmixLlvm::MULU;
+	memPhys[0x114] = MmixLlvm::DIVU;
 	memPhys[0x115] = 0;
 	memPhys[0x116] = 4;
 	memPhys[0x117] = 5;
@@ -282,22 +307,22 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	uint8_t* dataPtr = &memPhys[0] + TEXT_SIZE;
 	//#9e 37 79 b9 7f 4a 71 6
-	dataPtr[32] = 0x9e;
-	dataPtr[33] = 0x37;
-	dataPtr[34] = 0x79;
-	dataPtr[35] = 0xb9;
-	dataPtr[36] = 0x7f;
-	dataPtr[37] = 0x4a;
-	dataPtr[38] = 0x7c;
-	dataPtr[39] = 0x16;
-	dataPtr[40] = 0x9e;
-	dataPtr[41] = 0x37;
-	dataPtr[42] = 0x79;
-	dataPtr[43] = 0xb9;
-	dataPtr[44] = 0x7f;
-	dataPtr[45] = 0x4a;
-	dataPtr[46] = 0x7c;
-	dataPtr[47] = 0x16;
+	dataPtr[32] = 0;
+	dataPtr[33] = 0;
+	dataPtr[34] = 0;
+	dataPtr[35] = 0;
+	dataPtr[36] = 0;
+	dataPtr[37] = 0;
+	dataPtr[38] = 0;
+	dataPtr[39] = 0;
+	dataPtr[40] = 0;
+	dataPtr[41] = 0;
+	dataPtr[42] = 0;
+	dataPtr[43] = 0;
+	dataPtr[44] = 0;
+	dataPtr[45] = 0;
+	dataPtr[46] = 0;
+	dataPtr[47] = 13;
 
 	std::vector<uint32_t> att(4);
 	att[0] = 0;
