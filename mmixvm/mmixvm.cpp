@@ -287,9 +287,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	memPhys[0x10d] = 7;
 	memPhys[0x10e] = 1;
 	memPhys[0x10f] = 3;
-	memPhys[0x110] = MmixLlvm::ADD;
+	memPhys[0x110] = MmixLlvm::NEG;
 	memPhys[0x111] = 8;
-	memPhys[0x112] = 6;
+	memPhys[0x112] = 0;
 	memPhys[0x113] = 7;
 	memPhys[0x114] = MmixLlvm::DIVU;
 	memPhys[0x115] = 0;

@@ -288,3 +288,27 @@ void MmixLlvm::Private::emitDivu(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	addRegisterToCache(vctx, xarg, quotResult, true);
 	addSpecialRegisterToCache(vctx, MmixLlvm::rR, remResult, true);
 }
+
+void MmixLlvm::Private::emitNeg(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate) 
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	Value* yarg0 = builder.getInt64(yarg);
+	Value* zarg0 =  immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	Value* xval0 = builder.CreateSub(yarg0, zarg0);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, xval0, true);
+}
+
+void MmixLlvm::Private::emitNegu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	Value* yarg0 = builder.getInt64(yarg);
+	Value* zarg0 =  immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	Value* xval0 = builder.CreateSub(yarg0, zarg0);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, xval0, true);
+}

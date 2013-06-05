@@ -220,6 +220,18 @@ namespace {
 		case MmixLlvm::DIVUI:
 			emitDivu(vctx, xarg, yarg, zarg, true);
 			break;
+		case MmixLlvm::NEG:
+			emitNeg(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::NEGI:
+			emitNeg(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::NEGU:
+			emitNegu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::NEGUI:
+			emitNegu(vctx, xarg, yarg, zarg, true);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}
