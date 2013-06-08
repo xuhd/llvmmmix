@@ -118,6 +118,7 @@
   <ItemGroup>
     <ClCompile Include="ArithOpcodesImpl.cpp" />
     <ClCompile Include="CommonImpl.cpp" />
+    <ClCompile Include="ConditionalOpcodesImpl.cpp" />
     <ClCompile Include="LoadOpcodesImpl.cpp" />
     <ClCompile Include="MemAccess.cpp" />
     <ClCompile Include="MmixDef.cpp" />

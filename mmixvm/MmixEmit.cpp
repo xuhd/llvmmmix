@@ -256,6 +256,66 @@ namespace {
 		case MmixLlvm::SRUI:
 			emitSru(vctx, xarg, yarg, zarg, true);
 			break;
+		case MmixLlvm::CMP:
+			emitCmp(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CMPI:
+			emitCmp(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CMPU:
+			emitCmpu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CMPUI:
+			emitCmpu(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSN:
+			emitCsn(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CSNI:
+			emitCsn(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSZ:
+			emitCsz(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CSZI:
+			emitCsz(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSP:
+			emitCsp(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CSPI:
+			emitCsp(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSOD:
+			emitCsod(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CSODI:
+			emitCsod(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSNN:
+			emitCsnn(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CSNNI:
+			emitCsnn(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSNZ:
+			emitCsnz(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CSNZI:
+			emitCsnz(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSNP:
+			emitCsnp(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::CSNPI:
+			emitCsnp(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSEV:
+			emitCsev(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::CSEVI:
+			emitCsev(vctx, xarg, yarg, zarg, true);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}
