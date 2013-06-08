@@ -263,6 +263,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	arr[1] = MmixLlvm::DATA_SEG;
 	arr[2] = 32;
 	arr[3] = 40;
+	arr[10] = -13;
 	EE->addGlobalMapping(registersGlob, &arr[0]);
 
 	std::vector<uint64_t> spArr(SPECIAL_REGISTERS);
@@ -287,10 +288,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	memPhys[0x10d] = 7;
 	memPhys[0x10e] = 1;
 	memPhys[0x10f] = 3;
-	memPhys[0x110] = MmixLlvm::NEG;
-	memPhys[0x111] = 8;
-	memPhys[0x112] = 0;
-	memPhys[0x113] = 7;
+	memPhys[0x110] = MmixLlvm::SRI;
+	memPhys[0x111] = 11;
+	memPhys[0x112] = 10;
+	memPhys[0x113] = 1;
 	memPhys[0x114] = MmixLlvm::DIVU;
 	memPhys[0x115] = 0;
 	memPhys[0x116] = 4;

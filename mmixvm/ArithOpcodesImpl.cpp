@@ -312,3 +312,136 @@ void MmixLlvm::Private::emitNegu(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, xval0, true);
 }
+
+void MmixLlvm::Private::emitSr(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	BasicBlock *yPositiveBlock = BasicBlock::Create(ctx, genUniq("y_positive"), vctx.Function);
+	BasicBlock *yNegativeBlock = BasicBlock::Create(ctx, genUniq("y_negative"), vctx.Function);
+	BasicBlock *yDefBlock = BasicBlock::Create(ctx, genUniq("y_def"), vctx.Function);
+	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
+	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
+	Value* zarg0 =  immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	Value* yIsPositive = builder.CreateICmpSGE(yarg0, builder.getInt64(0));
+	builder.CreateCondBr(yIsPositive, yPositiveBlock, yNegativeBlock);
+	builder.SetInsertPoint(yPositiveBlock);
+	builder.CreateBr(yDefBlock);
+	builder.SetInsertPoint(yNegativeBlock);
+	Value* mask0 = builder.CreateShl(builder.getInt64(~0ui64), builder.CreateSub(builder.getInt64(64), zarg0));
+	builder.CreateBr(yDefBlock);
+	builder.SetInsertPoint(yDefBlock);
+	PHINode* mask = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*mask).addIncoming(builder.getInt64(0), yPositiveBlock);
+	(*mask).addIncoming(mask0, yNegativeBlock);
+	Value* result = builder.CreateOr(builder.CreateLShr(yarg0, zarg0), mask);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, result, true);
+}
+
+void MmixLlvm::Private::emitSru(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
+	Value* zarg0 =  immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	Value* result = builder.CreateLShr(yarg0, zarg0);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, result, true);
+}
+
+/*
+ulong mask = a < LONG_WITDH - 1 ? ulong.MaxValue << LONG_WITDH - (a + 1) : ulong.MaxValue;
+bool overflow = ((val >= 0 ? (ulong)val : ~(ulong)val) & mask) != 0;
+if (!overflow)
+	return val << a;
+else
+	throw new Exception("Overflow");*/
+void MmixLlvm::Private::emitSl(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	BasicBlock *maskBlock0 = BasicBlock::Create(ctx, genUniq("mask_block_0"), vctx.Function);
+	BasicBlock *maskBlock1 = BasicBlock::Create(ctx, genUniq("mask_block_1"), vctx.Function);
+	BasicBlock *maskDef = BasicBlock::Create(ctx, genUniq("mask_def"), vctx.Function);
+	BasicBlock *yPositive = BasicBlock::Create(ctx, genUniq("y_positive"), vctx.Function);
+	BasicBlock *yNegative = BasicBlock::Create(ctx, genUniq("y_negative"), vctx.Function);
+	BasicBlock *yDef = BasicBlock::Create(ctx, genUniq("y_def"), vctx.Function);
+	BasicBlock *successBlock = BasicBlock::Create(ctx, genUniq("success"), vctx.Function);
+	BasicBlock *overflowBlock = BasicBlock::Create(ctx, genUniq("overflow"), vctx.Function);
+	BasicBlock *setOverflowFlag = BasicBlock::Create(ctx, genUniq("set_overflow_flag"), vctx.Function);
+	BasicBlock *exitViaOverflowTrip = BasicBlock::Create(ctx, genUniq("exit_via_overflow_trip"), vctx.Function);
+	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
+	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
+	Value* zarg0 = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	Value* b0 = builder.CreateICmpULT(zarg0, builder.getInt64(63));
+	builder.CreateCondBr(b0, maskBlock0, maskBlock1);
+	builder.SetInsertPoint(maskBlock0);
+	/*long.MaxValue << LONG_WITDH - (a + 1)*/
+	Value* mask0 = builder.CreateShl(builder.getInt64(-1i64), 
+		builder.CreateSub(builder.getInt64(64), builder.CreateAdd(zarg0, builder.getInt64(1)))); 
+	builder.CreateBr(maskDef);
+	builder.SetInsertPoint(maskBlock1);
+	/*long.MaxValue << LONG_WITDH - (a + 1)*/
+	Value* mask1 = builder.getInt64(-1i64); 
+	builder.CreateBr(maskDef);
+	builder.SetInsertPoint(maskDef);
+	PHINode* mask = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*mask).addIncoming(mask0, maskBlock0);
+	(*mask).addIncoming(mask1, maskBlock1);
+	Value* b1 = builder.CreateICmpSGE(yarg0, builder.getInt64(0));
+	/*(val >= 0 ? (ulong)val : ~(ulong)val)*/
+	builder.CreateCondBr(b1, yPositive, yNegative);
+	builder.SetInsertPoint(yPositive);
+	builder.CreateBr(yDef);
+	builder.SetInsertPoint(yNegative);
+	Value* notYarg0 = builder.CreateNot(yarg0);
+	builder.CreateBr(yDef);
+	builder.SetInsertPoint(yDef);
+	PHINode* y0 = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*y0).addIncoming(yarg0, yPositive);
+	(*y0).addIncoming(notYarg0, yNegative);
+	Value* initRaVal = emitSpecialRegisterLoad(vctx, builder, rA);
+	Value* overflow = builder.CreateICmpNE(builder.CreateAnd(y0, mask), builder.getInt64(0));
+	builder.CreateCondBr(overflow, overflowBlock, successBlock);
+	builder.SetInsertPoint(successBlock);
+	Value* result = builder.CreateShl(yarg0, zarg0);
+	builder.CreateBr(epilogue);
+	builder.SetInsertPoint(overflowBlock);
+	Value* initXRegVal = emitRegisterLoad(vctx, builder, xarg);
+	Value* overflowAlreadySet = 
+			builder.CreateICmpNE(
+				builder.CreateAnd(initRaVal, builder.getInt64(MmixLlvm::V)),
+				                  builder.getInt64(0));
+	builder.CreateCondBr(overflowAlreadySet, exitViaOverflowTrip, setOverflowFlag);
+	builder.SetInsertPoint(setOverflowFlag);
+	Value* overflowRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
+	builder.CreateBr(epilogue);
+	builder.SetInsertPoint(exitViaOverflowTrip);
+	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, getArithTripVector(MmixLlvm::V));
+	builder.SetInsertPoint(epilogue);
+	PHINode* shlResult = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*shlResult).addIncoming(result, successBlock);
+	(*shlResult).addIncoming(initXRegVal, setOverflowFlag);
+	PHINode* newRa = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+	(*newRa).addIncoming(initRaVal, successBlock);
+	(*newRa).addIncoming(overflowRaVal, setOverflowFlag);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, shlResult, true);
+	addSpecialRegisterToCache(vctx, MmixLlvm::rA, newRa, true);
+}
+
+void MmixLlvm::Private::emitSlu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
+	Value* zarg0 =  immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	Value* result = builder.CreateShl(yarg0, zarg0);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, result, true);
+}

@@ -268,3 +268,8 @@ uint64_t MmixLlvm::Private::getArithTripVector(MmixLlvm::ArithFlag flag) {
 		return 0;
 	}
 }
+
+void MmixLlvm::Private::debugInt64(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* val) {
+	Value* callParams[] = { val };
+	builder.CreateCall((*vctx.Module).getFunction("DebugInt64"), ArrayRef<Value*>(callParams, callParams + 1));
+}

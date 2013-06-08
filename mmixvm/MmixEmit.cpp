@@ -232,6 +232,30 @@ namespace {
 		case MmixLlvm::NEGUI:
 			emitNegu(vctx, xarg, yarg, zarg, true);
 			break;
+		case MmixLlvm::SL:
+			emitSl(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::SLI:
+			emitSl(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::SR:
+			emitSr(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::SRI:
+			emitSr(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::SLU:
+			emitSlu(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::SLUI:
+			emitSlu(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::SRU:
+			emitSru(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::SRUI:
+			emitSru(vctx, xarg, yarg, zarg, true);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}
