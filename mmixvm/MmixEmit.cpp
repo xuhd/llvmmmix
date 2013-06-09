@@ -316,6 +316,54 @@ namespace {
 		case MmixLlvm::CSEVI:
 			emitCsev(vctx, xarg, yarg, zarg, true);
 			break;
+		case MmixLlvm::ZSN:
+			emitZsn(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ZSNI:
+			emitZsn(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ZSZ:
+			emitZsz(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ZSZI:
+			emitZsz(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ZSP:
+			emitZsp(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ZSPI:
+			emitZsp(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ZSOD:
+			emitZsod(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ZSODI:
+			emitZsod(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ZSNN:
+			emitZsnn(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ZSNNI:
+			emitZsnn(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ZSNZ:
+			emitZsnz(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ZSNZI:
+			emitZsnz(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ZSNP:
+			emitZsnp(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ZSNPI:
+			emitZsnp(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ZSEV:
+			emitZsev(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ZSEVI:
+			emitZsev(vctx, xarg, yarg, zarg, true);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}

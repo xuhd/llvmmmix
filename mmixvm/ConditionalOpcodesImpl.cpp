@@ -27,7 +27,8 @@ namespace {
 			static void emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
 		};
 
-		template<class Cond> void EmitCond<Cond>::emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+		template<class Cond> void EmitCond<Cond>::emit(VerticeContext& vctx, 
+			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 		{
 			LLVMContext& ctx = *vctx.Ctx;
 			IRBuilder<> builder(ctx);
@@ -42,7 +43,7 @@ namespace {
 			builder.SetInsertPoint(condTrueBlock);
 			builder.CreateBr(epilogue);
 			builder.SetInsertPoint(condFalseBlock);
-			Value* defXval = emitRegisterLoad(vctx, builder, xarg);
+			Value* defXval = typename Cond::emitDefXVal(vctx, builder, xarg);
 			builder.CreateBr(epilogue);
 			builder.SetInsertPoint(epilogue);
 			PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
@@ -59,6 +60,10 @@ void MmixLlvm::Private::emitCsn(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpSLT(arg, builder.getInt64(0));
 		}
+
+		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, uint8_t xarg) {
+			return emitRegisterLoad(vctx, builder, xarg);
+		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
 }
@@ -68,6 +73,10 @@ void MmixLlvm::Private::emitCsz(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpEQ(arg, builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, uint8_t xarg) {
+			return emitRegisterLoad(vctx, builder, xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -79,6 +88,10 @@ void MmixLlvm::Private::emitCsp(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpSGT(arg, builder.getInt64(0));
 		}
+
+		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, uint8_t xarg) {
+			return emitRegisterLoad(vctx, builder, xarg);
+		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
 }
@@ -88,6 +101,10 @@ void MmixLlvm::Private::emitCsod(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpNE(builder.CreateAnd(arg, builder.getInt64(1)), builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, uint8_t xarg) {
+			return emitRegisterLoad(vctx, builder, xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -99,6 +116,10 @@ void MmixLlvm::Private::emitCsnn(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpSGE(arg, builder.getInt64(0));
 		}
+
+		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, uint8_t xarg) {
+			return emitRegisterLoad(vctx, builder, xarg);
+		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
 }
@@ -108,6 +129,10 @@ void MmixLlvm::Private::emitCsnz(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpNE(arg, builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, uint8_t xarg) {
+			return emitRegisterLoad(vctx, builder, xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -119,6 +144,10 @@ void MmixLlvm::Private::emitCsnp(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpSLE(arg, builder.getInt64(0));
 		}
+
+		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, uint8_t xarg) {
+			return emitRegisterLoad(vctx, builder, xarg);
+		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
 }
@@ -129,6 +158,123 @@ void MmixLlvm::Private::emitCsev(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpEQ(builder.CreateAnd(arg, builder.getInt64(1)), builder.getInt64(0));
 		}
+
+		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, uint8_t xarg) {
+			return emitRegisterLoad(vctx, builder, xarg);
+		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
 }
+
+void MmixLlvm::Private::emitZsn(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	struct Cond {
+		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
+			return builder.CreateICmpSLT(arg, builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext&, IRBuilder<>& builder, uint8_t) {
+			return builder.getInt64(0);
+		}
+	};
+	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+		
+void MmixLlvm::Private::emitZsz(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	struct Cond {
+		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
+			return builder.CreateICmpEQ(arg, builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext&, IRBuilder<>& builder, uint8_t) {
+			return builder.getInt64(0);
+		}
+	};
+	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+		
+void MmixLlvm::Private::emitZsp(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	struct Cond {
+		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
+			return builder.CreateICmpSGT(arg, builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext&, IRBuilder<>& builder, uint8_t) {
+			return builder.getInt64(0);
+		}
+	};
+	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+		
+void MmixLlvm::Private::emitZsod(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	struct Cond {
+		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
+			return builder.CreateICmpNE(builder.CreateAnd(arg, builder.getInt64(1)), builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext&, IRBuilder<>& builder, uint8_t) {
+			return builder.getInt64(0);
+		}
+	};
+	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+		
+void MmixLlvm::Private::emitZsnn(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	struct Cond {
+		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
+			return builder.CreateICmpSGE(arg, builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext&, IRBuilder<>& builder, uint8_t) {
+			return builder.getInt64(0);
+		}
+	};
+	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
+void MmixLlvm::Private::emitZsnz(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	struct Cond {
+		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
+			return builder.CreateICmpNE(arg, builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext&, IRBuilder<>& builder, uint8_t) {
+			return builder.getInt64(0);
+		}
+	};
+	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
+void MmixLlvm::Private::emitZsnp(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	struct Cond {
+		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
+			return builder.CreateICmpSLE(arg, builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext&, IRBuilder<>& builder, uint8_t) {
+			return builder.getInt64(0);
+		}
+	};
+	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
+void MmixLlvm::Private::emitZsev(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+{
+	struct Cond {
+		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
+			return builder.CreateICmpEQ(builder.CreateAnd(arg, builder.getInt64(1)), builder.getInt64(0));
+		}
+
+		static Value* emitDefXVal(VerticeContext&, IRBuilder<>& builder, uint8_t) {
+			return builder.getInt64(0);
+		}
+	};
+	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+}
+
