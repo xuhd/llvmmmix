@@ -264,13 +264,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	arr[2] = 32;
 	arr[3] = 40;
 	arr[10] = -13;
-	arr[20] = 2;
-	arr[21] = 2;
+	arr[20] = 0xCCCCCCCCCCCCCCCC;
+	arr[21] = 0xAAAAAAAAAAAAAAAA;
 	EE->addGlobalMapping(registersGlob, &arr[0]);
 
 	std::vector<uint64_t> spArr(SPECIAL_REGISTERS);
 	spArr[MmixLlvm::rA] = 0; //MmixLlvm::V;
 	spArr[MmixLlvm::rD] = -1;
+	spArr[MmixLlvm::rM] = 0xFF00FF00FF00FF00;
 	EE->addGlobalMapping(specialRegistersGlob, &spArr[0]);
 	
 	std::vector<uint8_t> memPhys(MEM_ARR_SIZE);
@@ -290,10 +291,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	memPhys[0x10d] = 7;
 	memPhys[0x10e] = 1;
 	memPhys[0x10f] = 3;
-	memPhys[0x110] = MmixLlvm::CSEVI;
+	memPhys[0x110] = MmixLlvm::MUX;
 	memPhys[0x111] = 11;
 	memPhys[0x112] = 20;
-	memPhys[0x113] = 66;
+	memPhys[0x113] = 21;
 	memPhys[0x114] = MmixLlvm::DIVU;
 	memPhys[0x115] = 0;
 	memPhys[0x116] = 4;

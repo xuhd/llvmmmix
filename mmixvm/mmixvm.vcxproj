@@ -117,6 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ArithOpcodesImpl.cpp" />
+    <ClCompile Include="BitwiseOpcodesImpl.cpp" />
     <ClCompile Include="CommonImpl.cpp" />
     <ClCompile Include="ConditionalOpcodesImpl.cpp" />
     <ClCompile Include="LoadOpcodesImpl.cpp" />

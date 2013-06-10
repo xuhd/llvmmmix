@@ -311,7 +311,7 @@ namespace {
 			emitCsnp(vctx, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSEV:
-			emitCsev(vctx, xarg, yarg, zarg, true);
+			emitCsev(vctx, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSEVI:
 			emitCsev(vctx, xarg, yarg, zarg, true);
@@ -359,10 +359,64 @@ namespace {
 			emitZsnp(vctx, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSEV:
-			emitZsev(vctx, xarg, yarg, zarg, true);
+			emitZsev(vctx, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSEVI:
 			emitZsev(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::AND:
+			emitAnd(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ANDI:
+			emitAnd(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::OR:
+			emitOr(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ORI:
+			emitOr(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::XOR:
+			emitXor(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::XORI:
+			emitXor(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ANDN:
+			emitAndn(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ANDNI:
+			emitAndn(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::ORN:
+			emitOrn(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::ORNI:
+			emitOrn(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::NAND:
+			emitNand(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::NANDI:
+			emitNand(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::NOR:
+			emitNor(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::NORI:
+			emitNor(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::NXOR:
+			emitNxor(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::NXORI:
+			emitNxor(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::MUX:
+			emitMux(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::MUXI:
+			emitMux(vctx, xarg, yarg, zarg, true);
 			break;
 		default:
 			assert(0 && "Not implemented");
