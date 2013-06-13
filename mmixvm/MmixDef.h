@@ -11,6 +11,8 @@ namespace MmixLlvm {
 
 	extern const uint64_t STACK_SEG;
 
+	extern const uint64_t OS_TRAP_VECTOR;
+
 	enum MmixOpcode {
         //#0			  #1			   #2			  #3			  #4			   #5			  #6			  #7
 /*0x#*/ TRAP=0x00,  	  FCMP =0x01,      FUN=0x02,      FEQL=0x03,      FADD=0x04,       FIX=0x05,      FSUB=0x06,      FIXU=0x07,
@@ -69,5 +71,15 @@ namespace MmixLlvm {
 		W = 1<<5,
 		V = 1<<6,
 		D = 1<<7
+	};
+
+	struct HardwareCfg {
+		size_t TextSize;
+		
+		size_t HeapSize;
+		
+		size_t PoolSize;
+
+		size_t StackSize;
 	};
 };

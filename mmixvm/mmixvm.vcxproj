@@ -111,6 +111,10 @@
     <ClInclude Include="MmixDef.h" />
     <ClInclude Include="MmixEmit.h" />
     <ClInclude Include="MmixEmitPvt.h" />
+    <ClInclude Include="Engine.h" />
+    <ClInclude Include="MmixHwImpl.h" />
+    <ClInclude Include="OS.h" />
+    <ClInclude Include="RegAccess.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Util.h" />
@@ -120,16 +124,22 @@
     <ClCompile Include="BitwiseOpcodesImpl.cpp" />
     <ClCompile Include="CommonImpl.cpp" />
     <ClCompile Include="ConditionalOpcodesImpl.cpp" />
+    <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="ImmYZImpl.cpp" />
     <ClCompile Include="LoadOpcodesImpl.cpp" />
     <ClCompile Include="MemAccess.cpp" />
     <ClCompile Include="MmixDef.cpp" />
     <ClCompile Include="MmixEmit.cpp" />
+    <ClCompile Include="MmixHwImpl.cpp" />
     <ClCompile Include="mmixvm.cpp" />
+    <ClCompile Include="OS.cpp" />
+    <ClCompile Include="RegAccess.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="StoreOpcodesImpl.cpp" />
+    <ClCompile Include="TripAndTrapImpl.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

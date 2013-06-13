@@ -74,7 +74,7 @@ namespace {
 		Value* overflowRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(exitViaOverflowTrip);
-		emitLeaveVerticeViaTrip(vctx, builder, theA, xVal, getArithTripVector(MmixLlvm::V));
+		emitLeaveVerticeViaTrip(vctx, builder, theA, xVal, builder.getInt64(getArithTripVector(MmixLlvm::V)));
 		builder.SetInsertPoint(epilogue);
 		PHINode* ra = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 		(*ra).addIncoming(initRaVal, success);

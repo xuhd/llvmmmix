@@ -9,5 +9,11 @@
 namespace MmixLlvm {
 	typedef std::vector<uint64_t> EdgeList;
 
-	boost::tuple<llvm::Function*, EdgeList> emitSimpleVertice(llvm::LLVMContext& ctx, llvm::Module& m, MmixLlvm::MemAccessor& ma, uint64_t xPtr);
+	struct Vertice {
+		EdgeList EdgeList;
+
+		llvm::Function* Function;
+	};
+
+	void emitSimpleVertice(llvm::LLVMContext& ctx, llvm::Module& m, MmixLlvm::MemAccessor& ma, uint64_t xPtr, Vertice& out);
 };

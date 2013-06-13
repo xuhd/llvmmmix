@@ -24,7 +24,14 @@ using MmixLlvm::MemAccessor;
 
 namespace {
 	bool isTerm(uint32_t instr) {
-		return instr == 0; // todo
+		uint8_t o0 = (uint8_t) (instr >> 24);
+		switch(o0) {
+		case MmixLlvm::TRIP:
+		case MmixLlvm::TRAP:
+			return true;
+		default:
+			return false;
+		}
 	}
 
 	void emitInstruction(VerticeContext& vctx)
@@ -418,6 +425,66 @@ namespace {
 		case MmixLlvm::MUXI:
 			emitMux(vctx, xarg, yarg, zarg, true);
 			break;
+		case MmixLlvm::SADD:
+			emitSadd(vctx, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::SADDI:
+			emitSadd(vctx, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::SETH:
+			emitSeth(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::SETMH:
+			emitSetmh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::SETML:
+			emitSetml(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::SETL:
+			emitSetl(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::INCH:
+			emitInch(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::INCMH:
+			emitIncmh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::INCML:
+			emitIncml(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::INCL:
+			emitIncl(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::ORH:
+			emitOrh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::ORMH:
+			emitOrmh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::ORML:
+			emitOrml(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::ORL:
+			emitOrl(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::ANDNH:
+			emitAndnh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::ANDNMH:
+			emitAndnmh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::ANDNML:
+			emitAndnml(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::ANDNL:
+			emitAndnl(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			break;
+		case MmixLlvm::TRIP:
+			emitTrip(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::TRAP:
+			emitTrap(vctx, xarg, yarg, zarg);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}
@@ -434,7 +501,7 @@ namespace {
 	}
 };
 
-boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, uint64_t xPtr)
+void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, uint64_t xPtr, Vertice& out)
 {
 	std::vector<std::string> twines;
 	RegistersMap regMap;
@@ -447,8 +514,6 @@ boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, 
 	BasicBlock *block = verticeEntry;
 	for (;;) {
 		uint32_t instr = ma.readTetra(xPtr0);
-		if (isTerm(instr))
-			break;
 		VerticeContext e;
 		e.Ctx = &ctx;
 		e.Function = f;
@@ -462,6 +527,8 @@ boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, 
 			oenv.back().Exit = block;
 		oenv.push_back(e);
 		block = BasicBlock::Create(ctx, getInstrTwine(twines, e.Instr, e.XPtr), f);
+		if (isTerm(instr))
+			break;
 		xPtr0 += sizeof(uint32_t);
 	}
 
@@ -475,10 +542,5 @@ boost::tuple<Function*, EdgeList> MmixLlvm::emitSimpleVertice(LLVMContext& ctx, 
 	for (std::vector<VerticeContext>::iterator itr = oenv.begin(); itr != oenv.end(); ++itr)
 		emitInstruction(*itr);
 
-	if (!oenv.empty()) {
-		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(mainExit);
-		emitLeaveVertice(oenv.back(), builder, oenv.back().XPtr);
-	}
-	return boost::make_tuple(f, EdgeList());
+	out.Function = f;
 }
