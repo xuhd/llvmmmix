@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include <windows.h>
 #include "Util.h"
+#include "Engine.h"
+#include "MemAccess.h"
+#include "RegAccess.h"
+#include "OS.h"
 
 using llvm::Twine;
 
@@ -43,3 +47,11 @@ std::wstring MmixLlvm::Util::fromUTF8(const std::vector<uint8_t>& arg) {
 	::MultiByteToWideChar(CP_UTF8, 0, (LPCSTR)&arg[0], arg.size(), &tmp[0], cc);
 	return std::wstring(tmp.begin(), tmp.end());
 }
+
+MmixLlvm::MemAccessor::~MemAccessor() { }
+
+MmixLlvm::RegAccessor::~RegAccessor() { }
+
+MmixLlvm::Engine::~Engine() { }
+
+MmixLlvm::OS::~OS() { }
