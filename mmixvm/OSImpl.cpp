@@ -69,12 +69,12 @@ void OSImpl::makeArgv(Engine& e, uint64_t topDataSegAddr) {
 }
 
 void OSImpl::handleTrap(Engine& e, uint64_t vector) {
-	enum {Fopen = 1, Fclose = 2, Fread = 3,
-		  Fgets = 4, Fgetws = 5, Fwrite = 6,
-		  Fputs = 7, Fputws = 8, Fseek = 9,
-		  Ftell = 10, 
-		  TextRead = 0, TextWrite = 1, BinaryRead = 2,
-		  BinaryWrite = 3, BinaryReadWrite = 4};
+	enum {Fopen = 1,  Fclose = 2,
+		  Fread = 3,  Fgets = 4,
+		  Fgetws = 5, Fwrite = 6,
+		  Fputs = 7,  Fputws = 8,
+		  Fseek = 9,  Ftell = 10
+	};
 	switch (e.getSpReg(MmixLlvm::rYY)) {
 	case Fopen:
 		break;

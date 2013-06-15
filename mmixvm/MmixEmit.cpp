@@ -485,6 +485,12 @@ namespace {
 		case MmixLlvm::TRAP:
 			emitTrap(vctx, xarg, yarg, zarg);
 			break;
+		case MmixLlvm::GETA:
+			emitGeta(vctx, xarg, ((uint16_t)yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::GETAB:
+			emitGeta(vctx, xarg, ((uint16_t)yarg << 8) | zarg, true);
+			break;
 		default:
 			assert(0 && "Not implemented");
 		}

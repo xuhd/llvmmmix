@@ -251,6 +251,8 @@ namespace MmixLlvm {
 
 		extern void emitTrap(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 
+		extern void emitGeta(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg, bool backward);
+
 		extern void debugInt64(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* val);
 	};
 };
