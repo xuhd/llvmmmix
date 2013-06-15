@@ -86,7 +86,7 @@ namespace {
 			if (cache)
 				addRegisterToCache(vctx, reg, retVal, false);
 		} else {
-			retVal = (*itr).second.value;
+			retVal = itr->second.value;
 		}
 		return retVal;
 	}
@@ -111,7 +111,7 @@ namespace {
 				sregMap[sreg] = r0;
 			}
 		} else {
-			retVal = (*itr).second.value;
+			retVal = itr->second.value;
 		}
 		return retVal;
 	}
@@ -153,24 +153,24 @@ namespace {
 		LLVMContext& ctx = *vctx.Ctx;
 		Value *specialRegisters = (*vctx.Module).getGlobalVariable("SpecialRegisters");
 		for (RegistersMap::iterator itr = sregMap.begin(); itr != sregMap.end(); ++itr) {
-			if ((*itr).second.changed) {
+			if (itr->second.changed) {
 				Value* ix[2];
 				ix[0] = builder.getInt32(0);
-				ix[1] = builder.getInt32((*itr).first);
+				ix[1] = builder.getInt32(itr->first);
 				builder.CreateStore(
-					(*itr).second.value,
+					itr->second.value,
 					builder.CreatePointerCast(
 					builder.CreateGEP(specialRegisters, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
 			}
 		}
 		Value *registers = (*vctx.Module).getGlobalVariable("Registers");
 		for (RegistersMap::iterator itr = regMap.begin(); itr != regMap.end(); ++itr) {
-			if ((*itr).second.changed) {
+			if (itr->second.changed) {
 				Value* ix[2];
 				ix[0] = builder.getInt32(0);
-				ix[1] = builder.getInt32((*itr).first);
+				ix[1] = builder.getInt32(itr->first);
 				builder.CreateStore(
-					(*itr).second.value,
+					itr->second.value,
 					builder.CreatePointerCast(
 					builder.CreateGEP(registers, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
 			}
@@ -189,13 +189,13 @@ void MmixLlvm::Private::emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBu
 	RegistersMap sregMap(*vctx.SpecialRegMap);
 	RegisterRecord r0;
 	r0.changed = true;
+	r0.value = builder.getInt64(vctx.XPtr + 4);
+	sregMap[MmixLlvm::rW] = r0;
 	r0.value = emitRegisterLoadImpl(vctx, builder, 255, false);
 	sregMap[MmixLlvm::rB] = r0;
 	r0.value = emitSpecialRegisterLoadImpl(vctx, builder, MmixLlvm::rJ, false);
 	regMap[255] = r0;
 	r0.value = builder.CreateOr(builder.CreateShl(builder.getInt64(1), 63), builder.getInt64(vctx.Instr));
-	sregMap[MmixLlvm::rW] = r0;
-	r0.value = builder.getInt64(vctx.XPtr + 4);
 	sregMap[MmixLlvm::rX] = r0;
 	r0.value = rY;
 	sregMap[MmixLlvm::rY] = r0;
@@ -211,13 +211,13 @@ void MmixLlvm::Private::emitLeaveVerticeViaTrap(VerticeContext& vctx, llvm::IRBu
 	RegistersMap sregMap(*vctx.SpecialRegMap);
 	RegisterRecord r0;
 	r0.changed = true;
+	r0.value = builder.getInt64(vctx.XPtr + 4);
+	sregMap[MmixLlvm::rWW] = r0;
 	r0.value = emitRegisterLoadImpl(vctx, builder, 255, false);
 	sregMap[MmixLlvm::rBB] = r0;
 	r0.value = emitSpecialRegisterLoadImpl(vctx, builder, MmixLlvm::rJ, false);
 	regMap[255] = r0;
 	r0.value = builder.CreateOr(builder.CreateShl(builder.getInt64(1), 63), builder.getInt64(vctx.Instr));
-	sregMap[MmixLlvm::rWW] = r0;
-	r0.value = builder.getInt64(vctx.XPtr + 4);
 	sregMap[MmixLlvm::rXX] = r0;
 	r0.value = rY;
 	sregMap[MmixLlvm::rYY] = r0;

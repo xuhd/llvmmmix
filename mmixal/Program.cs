@@ -300,7 +300,10 @@ namespace mmixal {
             doRenderSingleOcta(ExpressionBuilder.makePointer(_lastGreg), _symbolBindings, 0, 0, buff);
             _output.Write(buff, 0, buff.Length);
             for (int i = _lastGreg; i < _globalRegs.Length; i++) {
-                doRenderSingleOcta(ExpressionBuilder.makePointer(_globalRegs[i].asMmixOcta()), _symbolBindings, 0, 0, buff);
+                int greg = 255 - i - 1;
+                doRenderSingleOcta(ExpressionBuilder.makePointer(_globalRegs[greg].asMmixOcta()), _symbolBindings, 0, 0, buff);
+                _output.Write(buff, 0, buff.Length);
+                doRenderSingleOcta(ExpressionBuilder.makePointer(0), _symbolBindings, 0, 0, buff);
                 _output.Write(buff, 0, buff.Length);
             }
         }

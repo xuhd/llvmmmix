@@ -149,20 +149,20 @@ void MmixLlvm::Private::emitSadd(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	builder.CreateBr(loopEntry);
 	builder.SetInsertPoint(loopEntry);
 	PHINode* counter = builder.CreatePHI(Type::getInt32Ty(ctx), 0);
-	(*counter).addIncoming(builder.getInt32(0), vctx.Entry);
+	counter->addIncoming(builder.getInt32(0), vctx.Entry);
 	PHINode* var = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
-	(*var).addIncoming(arg0, vctx.Entry);
+	var->addIncoming(arg0, vctx.Entry);
 	PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
-	(*result).addIncoming(builder.getInt64(0), vctx.Entry);
+	result->addIncoming(builder.getInt64(0), vctx.Entry);
 	Value* cond = builder.CreateICmpULT(counter, builder.getInt32(64));
 	builder.CreateCondBr(cond, loop, vctx.Exit);
 	builder.SetInsertPoint(loop);
 	Value* nextResult = builder.CreateAdd(result, builder.CreateAnd(var, builder.getInt64(1)));
 	Value* nextCounter = builder.CreateAdd(counter, builder.getInt32(1));
 	Value* nextVar = builder.CreateLShr(var, builder.getInt64(1));
-	(*counter).addIncoming(nextCounter, loop);
-	(*var).addIncoming(nextVar, loop);
-	(*result).addIncoming(nextResult, loop);
+	counter->addIncoming(nextCounter, loop);
+	var->addIncoming(nextVar, loop);
+	result->addIncoming(nextResult, loop);
 	builder.CreateBr(loopEntry);
 	addRegisterToCache(vctx, xarg, result, true);
 }

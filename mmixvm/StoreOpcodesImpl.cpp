@@ -77,8 +77,8 @@ namespace {
 		emitLeaveVerticeViaTrip(vctx, builder, theA, xVal, builder.getInt64(getArithTripVector(MmixLlvm::V)));
 		builder.SetInsertPoint(epilogue);
 		PHINode* ra = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
-		(*ra).addIncoming(initRaVal, success);
-		(*ra).addIncoming(overflowRaVal, setOverflowFlag);
+		ra->addIncoming(initRaVal, success);
+		ra->addIncoming(overflowRaVal, setOverflowFlag);
 		builder.CreateBr(vctx.Exit);
 		addSpecialRegisterToCache(vctx, MmixLlvm::rA, ra, true);
 	}

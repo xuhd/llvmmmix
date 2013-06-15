@@ -47,8 +47,8 @@ namespace {
 			builder.CreateBr(epilogue);
 			builder.SetInsertPoint(epilogue);
 			PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
-			(*result).addIncoming(zarg0, condTrueBlock);
-			(*result).addIncoming(defXval, condFalseBlock);
+			result->addIncoming(zarg0, condTrueBlock);
+			result->addIncoming(defXval, condFalseBlock);
 			builder.CreateBr(vctx.Exit);
 			addRegisterToCache(vctx, xarg, result, true);
 		}

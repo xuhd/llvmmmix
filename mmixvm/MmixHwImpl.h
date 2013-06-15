@@ -50,12 +50,6 @@ namespace MmixLlvm {
 		static void muluImpl(uint64_t arg1, uint64_t arg2, uint64_t* hiProd, uint64_t* loProd);
 
 		static void divuImpl(uint64_t hidivident, uint64_t lodivident, uint64_t divisor, uint64_t* quotient, uint64_t* remainder);
-		
-		static uint16_t adjust16Endianness(llvm::ArrayRef<uint8_t>& ref);
-
-		static uint32_t adjust32Endianness(llvm::ArrayRef<uint8_t>& ref);
-
-		static uint64_t adjust64Endianness(llvm::ArrayRef<uint8_t>& ref);
 
 		static uint64_t adjust64EndiannessImpl(uint64_t arg);
 	public:

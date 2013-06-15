@@ -2,37 +2,25 @@
 //
 
 #include "stdafx.h"
-#include "MemAccess.h"
-#include "MmixDef.h"
 #include "MmixHwImpl.h"
-#include "MmixEmit.h"
 #include "Engine.h"
-#include "OS.h"
-
-namespace {
-	class OSImpl: public MmixLlvm::OS {
-	public:
-		virtual void handleTrap(MmixLlvm::Engine& e);
-		virtual ~OSImpl();
-	};
-
-	void OSImpl::handleTrap(MmixLlvm::Engine& e) {
-		e.halt();
-	}
-
-	OSImpl::~OSImpl() { }
-};
+#include "OSImpl.h"
+#include <windows.h>
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	llvm::InitializeNativeTarget();
-	MmixLlvm::HardwareCfg cfg;
-	enum { _16K = 16 * 1024 };
-	cfg.TextSize = cfg.HeapSize = cfg.PoolSize = cfg.StackSize = _16K;
-	boost::shared_ptr<MmixLlvm::Engine> theHw(MmixLlvm::MmixHwImpl::create(cfg,
-		boost::shared_ptr<MmixLlvm::OS>(new OSImpl)));
-	(*theHw).setSpReg(MmixLlvm::rT, MmixLlvm::OS_TRAP_VECTOR);
-	(*theHw).run(0x100);
-	llvm::llvm_shutdown();
+	if (argc >= 2) {
+		llvm::InitializeNativeTarget();
+		MmixLlvm::HardwareCfg cfg;
+		enum { _16K = 16 * 1024 };
+		cfg.TextSize = cfg.HeapSize = cfg.PoolSize = cfg.StackSize = _16K;
+		std::vector< std::wstring > argv0;
+		for (int i = 1; i < argc; i++)
+			argv0.push_back(std::wstring(argv[i]));
+		boost::shared_ptr<MmixLlvm::Engine> theHw(MmixLlvm::MmixHwImpl::create(cfg,
+			boost::shared_ptr<MmixLlvm::OS>(new MmixLlvm::OSImpl(argv0))));
+		theHw->run(0x100);
+		llvm::llvm_shutdown();
+	}
 	return 0;
 }

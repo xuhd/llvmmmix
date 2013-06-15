@@ -105,6 +105,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
+    <None Include="test\out.mmo" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MemAccess.h" />
@@ -114,6 +115,7 @@
     <ClInclude Include="Engine.h" />
     <ClInclude Include="MmixHwImpl.h" />
     <ClInclude Include="OS.h" />
+    <ClInclude Include="OSImpl.h" />
     <ClInclude Include="RegAccess.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -133,6 +135,7 @@
     <ClCompile Include="MmixHwImpl.cpp" />
     <ClCompile Include="mmixvm.cpp" />
     <ClCompile Include="OS.cpp" />
+    <ClCompile Include="OSImpl.cpp" />
     <ClCompile Include="RegAccess.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

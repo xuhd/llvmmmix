@@ -13,6 +13,9 @@
 #include <limits.h>
 #include <vector>
 #include <sstream>
+#include <fstream>
+#include <iterator>
+#include <algorithm>
 #include <boost/tuple/tuple.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
