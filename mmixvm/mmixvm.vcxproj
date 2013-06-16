@@ -102,6 +102,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>mpir.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;LLVMJIT.lib;LLVMInterpreter.lib;LLVMX86CodeGen.lib;LLVMRuntimeDyld.lib;LLVMExecutionEngine.lib;LLVMAsmPrinter.lib;LLVMSelectionDAG.lib;LLVMX86Desc.lib;LLVMMCParser.lib;LLVMCodeGen.lib;LLVMX86AsmPrinter.lib;LLVMX86Info.lib;LLVMScalarOpts.lib;LLVMX86Utils.lib;LLVMInstCombine.lib;LLVMTransformUtils.lib;LLVMipa.lib;LLVMAnalysis.lib;LLVMTarget.lib;LLVMCore.lib;LLVMMC.lib;LLVMObject.lib;LLVMSupport.lib</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>cmd /k copy "$(MpirLibDir)\*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />

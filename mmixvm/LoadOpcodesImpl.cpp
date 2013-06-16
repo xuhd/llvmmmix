@@ -36,17 +36,13 @@ namespace {
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
-		RegistersMap& regMap = *vctx.RegMap;
 		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 		Value* theA = makeA(vctx, builder, yVal, zVal);
 		Value* readVal = emitFetchMem(vctx, builder, theA);
 		Value* result = emitLoad(vctx, builder, readVal, isSigned);
 		builder.CreateBr(vctx.Exit);
-		RegisterRecord r0;
-		r0.value = result;
-		r0.changed = true;
-		regMap[xarg] = r0;
+		addRegisterToCache(vctx, xarg, result, true);
 	}
 
 	template<> void EmitL<2>::emitht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate) 
@@ -54,17 +50,13 @@ namespace {
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
-		RegistersMap& regMap = *vctx.RegMap;
 		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 		Value* theA = makeA(vctx, builder, yVal, zVal);
 		Value* readVal = emitFetchMem(vctx, builder, theA);
 		Value* result = builder.CreateShl(emitLoad(vctx, builder, readVal, false), builder.getInt64(32));
 		builder.CreateBr(vctx.Exit);
-		RegisterRecord r0;
-		r0.value = result;
-		r0.changed = true;
-		regMap[xarg] = r0;
+		addRegisterToCache(vctx, xarg, result, true);
 	}
 
 	template<> Value* EmitL<0>::makeA(VerticeContext& vctx, IRBuilder<>& builder, Value* yVal, Value* zVal)
@@ -166,4 +158,39 @@ void MmixLlvm::Private::emitLdht(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 void MmixLlvm::Private::emitLdhti(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
 {
 	EmitL<2>::emitht(vctx, xarg, yarg, zarg, true);
+}
+
+void MmixLlvm::Private::emitGet(VerticeContext& vctx, uint8_t xarg, uint8_t zarg)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	RegistersMap& regMap = *vctx.RegMap;
+	Value* val = emitSpecialRegisterLoad(vctx, builder, (MmixLlvm::SpecialReg)zarg);
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, val, true);
+}
+		
+void MmixLlvm::Private::emitPut(VerticeContext& vctx, uint8_t xarg, uint8_t zarg, bool immediate)
+{
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	RegistersMap& regMap = *vctx.RegMap;
+	Value* val = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	builder.CreateBr(vctx.Exit);
+	addSpecialRegisterToCache(vctx, xarg, val, true);
+}
+
+void MmixLlvm::Private::emitGeta(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg, bool backward) {
+	LLVMContext& ctx = *vctx.Ctx;
+	IRBuilder<> builder(ctx);
+	builder.SetInsertPoint(vctx.Entry);
+	Value* m;
+	if (!backward)
+		m = builder.getInt64(vctx.XPtr + (yzarg << 2));
+	else
+		m = builder.getInt64(vctx.XPtr - (yzarg << 2));
+	builder.CreateBr(vctx.Exit);
+	addRegisterToCache(vctx, xarg, m, true);
 }

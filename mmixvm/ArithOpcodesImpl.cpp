@@ -242,7 +242,7 @@ void MmixLlvm::Private::emitMulu(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 		loProd
 	};
 	Twine label = (immediate ? Twine("mulu") : Twine("mului")) + Twine(yarg) + Twine(zarg);
-	builder.CreateCall((*vctx.Module).getFunction("MuluImpl"), ArrayRef<Value*>(callParams, callParams + 4));
+	builder.CreateCall(vctx.Module->getFunction("MuluImpl"), ArrayRef<Value*>(callParams, callParams + 4));
 	Value* xval0 = builder.CreateLoad(loProd, false, label);
 	Value* rh = builder.CreateLoad(hiProd);
 	builder.CreateBr(vctx.Exit);
@@ -273,7 +273,7 @@ void MmixLlvm::Private::emitDivu(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	};
 	Twine labelq = (immediate ? Twine("divu_q") : Twine("divui_q")) + Twine(yarg) + Twine(zarg);
 	Twine labelr = (immediate ? Twine("divu_r") : Twine("divui_r")) + Twine(yarg) + Twine(zarg);
-	builder.CreateCall((*vctx.Module).getFunction("DivuImpl"), ArrayRef<Value*>(callParams, callParams + 5));
+	builder.CreateCall(vctx.Module->getFunction("DivuImpl"), ArrayRef<Value*>(callParams, callParams + 5));
 	Value* quotient = builder.CreateLoad(quotPtr, labelq);
 	Value* remainder = builder.CreateLoad(remPtr, labelr);
 	builder.CreateBr(epilogue);

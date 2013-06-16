@@ -26,6 +26,8 @@ namespace {
 	bool isTerm(uint32_t instr) {
 		uint8_t o0 = (uint8_t) (instr >> 24);
 		switch(o0) {
+		case MmixLlvm::JMP:
+		case MmixLlvm::JMPB:
 		case MmixLlvm::TRIP:
 		case MmixLlvm::TRAP:
 			return true;
@@ -94,6 +96,15 @@ namespace {
 			break;
 		case MmixLlvm::LDHTI:
 			emitLdhti(vctx, xarg, yarg, zarg);
+			break;
+		case MmixLlvm::GET:
+			emitGet(vctx, xarg, zarg);
+			break;
+		case MmixLlvm::PUT:
+			emitPut(vctx, xarg, zarg, false);
+			break;
+		case MmixLlvm::PUTI:
+			emitPut(vctx, xarg, zarg, true);
 			break;
 		case MmixLlvm::STO:
 			emitSto(vctx, xarg, yarg, zarg);
@@ -490,6 +501,108 @@ namespace {
 			break;
 		case MmixLlvm::GETAB:
 			emitGeta(vctx, xarg, ((uint16_t)yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::JMP:
+			emitJmp(vctx, ((uint32_t)xarg << 16) | ((uint32_t)yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::JMPB:
+			emitJmp(vctx, ((uint32_t)xarg << 16) | ((uint32_t)yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::BN:
+			emitBn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::BNB:
+			emitBn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::BZ:
+			emitBz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::BZB:
+			emitBz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::BP:
+			emitBp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::BPB:
+			emitBp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::BOD:
+			emitBod(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::BODB:
+			emitBod(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::BNN:
+			emitBnn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::BNNB:
+			emitBnn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::BNZ:
+			emitBnz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::BNZB:
+			emitBnz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::BNP:
+			emitBnp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::BNPB:
+			emitBnp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::BEV:
+			emitBev(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::BEVB:
+			emitBev(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::PBN:
+			emitBn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::PBNB:
+			emitBn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::PBZ:
+			emitBz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::PBZB:
+			emitBz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::PBP:
+			emitBp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::PBPB:
+			emitBp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::PBOD:
+			emitBod(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::PBODB:
+			emitBod(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::PBNN:
+			emitBnn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::PBNNB:
+			emitBnn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::PBNZ:
+			emitBnz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::PBNZB:
+			emitBnz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::PBNP:
+			emitBnp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::PBNPB:
+			emitBnp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			break;
+		case MmixLlvm::PBEV:
+			emitBev(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			break;
+		case MmixLlvm::PBEVB:
+			emitBev(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
 			break;
 		default:
 			assert(0 && "Not implemented");

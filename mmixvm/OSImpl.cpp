@@ -125,28 +125,47 @@ void OSImpl::doFputs(Engine& e, uint64_t rBB, uint64_t rXX, uint64_t rYY, uint64
 
 void OSImpl::readSection(Engine& e, std::istream& stream, bool& isGreg, uint64_t& loc, size_t& size) {
 	enum {SECTION_ALIGN = 0x20};
-	uint8_t buff[32];
-	stream.read((char*)buff, 32);
-	if (strcmp((char*)buff, ".greg") != 0) {
-		uint64_t loBound = MmixLlvm::Util::adjust64Endianness(ArrayRef<uint8_t>(buff + 8, buff + 16));
-		uint64_t hiBound = MmixLlvm::Util::adjust64Endianness(ArrayRef<uint8_t>(buff + 16, buff + 32));
-		size_t sectionSize = hiBound - loBound;
-		size_t tail = sectionSize % SECTION_ALIGN;
-		size_t alignedSectionSize = sectionSize + (tail > 0 ? (SECTION_ALIGN - tail) : 0);
-		std::vector<uint8_t> tmp(alignedSectionSize);
-		ArrayRef<uint8_t> buff1(tmp);
-		stream.read((char*)&buff1[0], alignedSectionSize);
-		for (size_t i = 0; i < sectionSize; i += 4) {
-			uint64_t tetraLoc = loBound + i;
-			e.writeTetra(tetraLoc, MmixLlvm::Util::adjust32Endianness(buff1.slice(i, 4))); 
+	uint8_t buff[SECTION_ALIGN];
+	stream.read((char*)buff, 8);
+	if (stream) {
+		if (strcmp((char*)buff, ".greg") != 0) {
+			stream.read((char*)buff, SECTION_ALIGN - 8);
+			uint64_t loBound = MmixLlvm::Util::adjust64Endianness(ArrayRef<uint8_t>(buff, buff + 8));
+			uint64_t hiBound = MmixLlvm::Util::adjust64Endianness(ArrayRef<uint8_t>(buff + 8, buff + 16));
+			size_t sectionSize = hiBound - loBound;
+			size_t tail = sectionSize % SECTION_ALIGN;
+			size_t alignedSectionSize = sectionSize + (tail > 0 ? (SECTION_ALIGN - tail) : 0);
+			std::vector<uint8_t> tmp(alignedSectionSize);
+			ArrayRef<uint8_t> buff1(tmp);
+			stream.read((char*)&buff1[0], alignedSectionSize);
+			for (size_t i = 0; i < sectionSize; i += 4) {
+				uint64_t tetraLoc = loBound + i;
+				e.writeTetra(tetraLoc, MmixLlvm::Util::adjust32Endianness(buff1.slice(i, 4))); 
+			}
+			isGreg = false;
+			loc = loBound;
+			size = alignedSectionSize;
+		} else {
+			isGreg = true;
+			loc = 0;
+			size = 0;
+			stream.read((char*)buff, 8);
+			uint64_t lastGreg = MmixLlvm::Util::adjust64Endianness(ArrayRef<uint8_t>(buff, buff + 8));
+			size_t s0 = 16 + (255 - lastGreg) * 8;
+			size_t tail = s0 % SECTION_ALIGN;
+			size_t alignedSectionSize = s0 + (tail > 0 ? (SECTION_ALIGN - tail) : 0);
+			size_t bytesRead = 16;
+			for (uint64_t i = lastGreg; i < 255ULL; i++) {
+				stream.read((char*)buff, 8);
+				bytesRead += 8;
+				uint64_t gregVal = MmixLlvm::Util::adjust64Endianness(ArrayRef<uint8_t>(buff, buff + 8));
+				e.setReg((uint8_t)i, gregVal);
+			}
+			while (bytesRead < alignedSectionSize) {
+				stream.read((char*)buff, 8);
+				bytesRead += 8;
+			}
 		}
-		isGreg = false;
-		loc = loBound;
-		size = alignedSectionSize;
-	} else {
-		isGreg = true;
-		loc = 0;
-		size = 0;
 	}
 }
 

@@ -55,8 +55,6 @@ namespace MmixLlvm {
 
 		extern uint64_t getArithTripVector(MmixLlvm::ArithFlag flag);
 
-		//extern void emitLeaveVertice(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* target);
-
 		extern void addRegisterToCache(VerticeContext& vctx, uint8_t reg, llvm::Value* val, bool markDirty);
 
 		extern void addSpecialRegisterToCache(VerticeContext& vctx, uint8_t reg, llvm::Value* val, bool markDirty);
@@ -66,6 +64,11 @@ namespace MmixLlvm {
 
 		extern void emitLeaveVerticeViaTrap(VerticeContext& vctx, llvm::IRBuilder<>& builder,
 			llvm::Value* rY, llvm::Value* rZ, llvm::Value* target);
+
+		extern void emitLeaveVerticeViaJump(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* target);
+
+		extern void emitLeaveVerticeViaCondJump(VerticeContext& vctx, llvm::IRBuilder<>& builder, 
+			llvm::Value* cond, llvm::Value* trueTarget, llvm::Value* falseTarget);
 
 		extern void emitLdo(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 
@@ -86,6 +89,10 @@ namespace MmixLlvm {
 		extern void emitLdht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 
 		extern void emitLdhti(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg);
+
+		extern void emitGet(VerticeContext& vctx, uint8_t xarg, uint8_t zarg);
+		
+		extern void emitPut(VerticeContext& vctx, uint8_t xarg, uint8_t zarg, bool immediate);
 
 		extern void emitSto(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 
@@ -252,6 +259,24 @@ namespace MmixLlvm {
 		extern void emitTrap(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 
 		extern void emitGeta(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg, bool backward);
+
+		extern void emitJmp(VerticeContext& vctx, uint32_t xyzarg, bool backward);
+
+		extern void emitBn(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
+
+		extern void emitBz(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
+
+		extern void emitBp(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
+
+		extern void emitBod(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
+
+		extern void emitBnn(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
+
+		extern void emitBnz(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
+
+		extern void emitBnp(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
+
+		extern void emitBev(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
 
 		extern void debugInt64(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* val);
 	};
