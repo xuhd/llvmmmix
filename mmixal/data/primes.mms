@@ -1,11 +1,11 @@
 ﻿% Example program ... Table of primes
 L      IS   500          The number of primes to find
 t      IS   $255         Temporary storage
-n      GREG
-q      GREG
-r      GREG
-jj     GREG
-kk     GREG
+n      GREG  //254
+q      GREG  //253
+r      GREG  //252
+jj     GREG  //251
+kk     GREG  //250
 pk     GREG
 mm     IS   kk
 
@@ -17,8 +17,8 @@ j0     GREG PRIME1+2-@
 BUF    OCTA
 
        LOC  #100
-Main   SET  n,3
-       SET  jj,j0
+Main   SET  n,3          254 <- 3
+       SET  jj,j0      
 2H     STWU n,ptop,jj
        INCL jj,2
 3H     BZ   jj,2F

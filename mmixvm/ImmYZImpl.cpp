@@ -98,7 +98,10 @@ void MmixLlvm::Private::emitIncl(VerticeContext& vctx, uint8_t xarg, uint16_t yz
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateAdd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg));
+	Value *xval0 = emitRegisterLoad(vctx, builder, xarg);
+	//debugInt64(vctx, builder, xval0);
+	Value* result = builder.CreateAdd(xval0, builder.getInt64((uint64_t) yzarg));
+	//debugInt64(vctx, builder, result);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }

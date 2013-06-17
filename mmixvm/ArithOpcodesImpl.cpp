@@ -453,8 +453,8 @@ void MmixLlvm::Private::emitCmp(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	builder.SetInsertPoint(vctx.Entry);
 	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
 	Value* zarg0 = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
-	Value* val0 = builder.CreateIntCast(builder.CreateICmpSGT(yarg0, zarg0), Type::getInt64Ty(ctx), true);
-	Value* val1 = builder.CreateIntCast(builder.CreateICmpSLT(yarg0, zarg0), Type::getInt64Ty(ctx), true);
+	Value* val0 = builder.CreateIntCast(builder.CreateICmpSGT(yarg0, zarg0), Type::getInt64Ty(ctx), false);
+	Value* val1 = builder.CreateIntCast(builder.CreateICmpSLT(yarg0, zarg0), Type::getInt64Ty(ctx), false);
 	Value* result = builder.CreateSub(val0, val1);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
@@ -467,8 +467,8 @@ void MmixLlvm::Private::emitCmpu(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	builder.SetInsertPoint(vctx.Entry);
 	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
 	Value* zarg0 = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
-	Value* val0 = builder.CreateIntCast(builder.CreateICmpUGT(yarg0, zarg0), Type::getInt64Ty(ctx), true);
-	Value* val1 = builder.CreateIntCast(builder.CreateICmpULT(yarg0, zarg0), Type::getInt64Ty(ctx), true);
+	Value* val0 = builder.CreateIntCast(builder.CreateICmpUGT(yarg0, zarg0), Type::getInt64Ty(ctx), false);
+	Value* val1 = builder.CreateIntCast(builder.CreateICmpULT(yarg0, zarg0), Type::getInt64Ty(ctx), false);
 	Value* result = builder.CreateSub(val0, val1);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
