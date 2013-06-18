@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Util.h"
+#include "MmixEmit.h"
 #include "MmixEmitPvt.h"
 #include "MmixDef.h"
 
@@ -28,22 +29,6 @@ namespace {
 };
 
 Value* MmixLlvm::Private::emitAdjust64Endianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val) {
-	/*Value* b0 = builder.CreateLShr(val, builder.getInt64(56));
-	Value* b1 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(48)), builder.getInt64(0xFF));
-	Value* b2 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(40)), builder.getInt64(0xFF));
-	Value* b3 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(32)), builder.getInt64(0xFF));
-	Value* b4 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(24)), builder.getInt64(0xFF));
-	Value* b5 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(16)), builder.getInt64(0xFF));
-	Value* b6 = builder.CreateAnd(builder.CreateLShr(val, builder.getInt64(8)), builder.getInt64(0xFF));
-	Value* b7 = builder.CreateAnd(val, builder.getInt64(0xFF));
-	Value* q0 = builder.CreateShl(b7, builder.getInt64(56));
-	Value* q1 = builder.CreateOr(q0, builder.CreateShl(b6, builder.getInt64(48)));
-	Value* q2 = builder.CreateOr(q1, builder.CreateShl(b5, builder.getInt64(40)));
-	Value* q3 = builder.CreateOr(q2, builder.CreateShl(b4, builder.getInt64(32)));
-	Value* q4 = builder.CreateOr(q3, builder.CreateShl(b3, builder.getInt64(24)));
-	Value* q5 = builder.CreateOr(q4, builder.CreateShl(b2, builder.getInt64(16)));
-	Value* q6 = builder.CreateOr(q5, builder.CreateShl(b1, builder.getInt64(8)));
-	Value* q7 = builder.CreateOr(q6, b0);*/
 	Function* f = vctx.Module->getFunction("Adjust64EndiannessImpl");
 	Value* args[] = { val };
 	return builder.CreateCall(f, ArrayRef<Value*>(args, args + 1));
@@ -72,11 +57,10 @@ Value* MmixLlvm::Private::emitAdjust16Endianness(VerticeContext& vctx, IRBuilder
 namespace {
 	Value* emitRegisterLoadImpl(VerticeContext& vctx, IRBuilder<>& builder, uint8_t reg, bool cache) {
 		LLVMContext& ctx = *vctx.Ctx;
-		RegistersMap& regMap = *vctx.RegMap;
 		Value *regGlob = vctx.Module->getGlobalVariable("Registers");
 		Value* retVal;
-		RegistersMap::iterator itr = regMap.find(reg);
-		if (itr == regMap.end()) {
+		RegistersMap::iterator itr = vctx.RegMap.find(reg);
+		if (itr == vctx.RegMap.end()) {
 			Value* ix[2];
 			ix[0] = builder.getInt32(0);
 			ix[1] = builder.getInt32(reg);
@@ -93,11 +77,10 @@ namespace {
 
 	Value* emitSpecialRegisterLoadImpl(VerticeContext& vctx, IRBuilder<>& builder, MmixLlvm::SpecialReg sreg, bool cache) {
 		LLVMContext& ctx = *vctx.Ctx;
-		RegistersMap& sregMap = *vctx.SpecialRegMap;
 		Value *regGlob = vctx.Module->getGlobalVariable("SpecialRegisters");
 		Value* retVal;
-		RegistersMap::iterator itr = sregMap.find(sreg);
-		if (itr == sregMap.end()) {
+		RegistersMap::iterator itr = vctx.SpecialRegMap.find(sreg);
+		if (itr == vctx.SpecialRegMap.end()) {
 			Value* ix[2];
 			ix[0] = builder.getInt32(0);
 			ix[1] = builder.getInt32(sreg);
@@ -108,7 +91,7 @@ namespace {
 				RegisterRecord r0;
 				r0.value = retVal;
 				r0.changed = false;
-				sregMap[sreg] = r0;
+				vctx.SpecialRegMap[sreg] = r0;
 			}
 		} else {
 			retVal = itr->second.value;
@@ -118,19 +101,17 @@ namespace {
 };
 
 void MmixLlvm::Private::addRegisterToCache(VerticeContext& vctx, uint8_t reg, Value* val, bool markDirty) {
-	RegistersMap& regMap = *vctx.RegMap;
 	RegisterRecord r0;
 	r0.value = val;
 	r0.changed = markDirty;
-	regMap[reg] = r0;
+	vctx.RegMap[reg] = r0;
 }
 
 void MmixLlvm::Private::addSpecialRegisterToCache(VerticeContext& vctx, uint8_t reg, Value* val, bool markDirty) {
-	RegistersMap& sregMap = *vctx.SpecialRegMap;
 	RegisterRecord r0;
 	r0.value = val;
 	r0.changed = markDirty;
-	sregMap[reg] = r0;
+	vctx.SpecialRegMap[reg] = r0;
 }
 
 Value* MmixLlvm::Private::emitRegisterLoad(VerticeContext& vctx, IRBuilder<>& builder, uint8_t reg) {
@@ -178,42 +159,34 @@ namespace {
 	}
 
 	void emitLeaveVerticeImpl(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-		RegistersMap& regMap, RegistersMap& sregMap, Value* target)
+		RegistersMap& regMap, RegistersMap& sregMap, uint64_t target)
 	{
 		saveRegisters(vctx, builder, regMap, sregMap);
+		MmixLlvm::EdgeList& edgeList = *vctx.Edges;
+		edgeList.push_back(target);
 		Function::ArgumentListType::iterator argItr = vctx.Function->arg_begin();
 		builder.CreateStore(builder.getInt64(vctx.XPtr), argItr);
-		builder.CreateStore(target, ++argItr);
+		builder.CreateStore(builder.getInt64(target), ++argItr);
 		builder.CreateRetVoid();
 	}
-	
-	void emitLeaveVerticeCondImpl(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-		RegistersMap& regMap, RegistersMap& sregMap, 
-		llvm::Value* cond, llvm::Value* trueTarget, llvm::Value* falseTarget)
+
+	void emitLeaveVerticeViaTrapImpl(VerticeContext& vctx, llvm::IRBuilder<>& builder,
+		RegistersMap& regMap, RegistersMap& sregMap)
 	{
-		LLVMContext& ctx = *vctx.Ctx;
+		Value* trapVector = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rT);
 		saveRegisters(vctx, builder, regMap, sregMap);
-		BasicBlock *condTrue = BasicBlock::Create(ctx, genUniq("cond_true"), vctx.Function);
-		BasicBlock *condFalse = BasicBlock::Create(ctx, genUniq("cond_false"), vctx.Function);
-		builder.CreateCondBr(cond, condTrue, condFalse);
-		builder.SetInsertPoint(condTrue);
 		Function::ArgumentListType::iterator argItr = vctx.Function->arg_begin();
 		builder.CreateStore(builder.getInt64(vctx.XPtr), argItr);
-		builder.CreateStore(trueTarget, ++argItr);
-		builder.CreateRetVoid();
-		builder.SetInsertPoint(condFalse);
-		argItr = vctx.Function->arg_begin();
-		builder.CreateStore(builder.getInt64(vctx.XPtr), argItr);
-		builder.CreateStore(falseTarget, ++argItr);
+		builder.CreateStore(trapVector, ++argItr);
 		builder.CreateRetVoid();
 	}
 };
 
 void MmixLlvm::Private::emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-	llvm::Value* rY, llvm::Value* rZ, llvm::Value* target)
+	llvm::Value* rY, llvm::Value* rZ, uint64_t target)
 {
-	RegistersMap regMap(*vctx.RegMap);
-	RegistersMap sregMap(*vctx.SpecialRegMap);
+	RegistersMap regMap(vctx.RegMap);
+	RegistersMap sregMap(vctx.SpecialRegMap);
 	RegisterRecord r0;
 	r0.changed = true;
 	r0.value = builder.getInt64(vctx.XPtr + 4);
@@ -232,10 +205,10 @@ void MmixLlvm::Private::emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBu
 }
 
 void MmixLlvm::Private::emitLeaveVerticeViaTrap(VerticeContext& vctx, IRBuilder<>& builder,
-	Value* rY, Value* rZ, Value* target)
+	Value* rY, Value* rZ)
 {
-	RegistersMap regMap(*vctx.RegMap);
-	RegistersMap sregMap(*vctx.SpecialRegMap);
+	RegistersMap regMap(vctx.RegMap);
+	RegistersMap sregMap(vctx.SpecialRegMap);
 	RegisterRecord r0;
 	r0.changed = true;
 	r0.value = builder.getInt64(vctx.XPtr + 4);
@@ -250,18 +223,12 @@ void MmixLlvm::Private::emitLeaveVerticeViaTrap(VerticeContext& vctx, IRBuilder<
 	sregMap[MmixLlvm::rYY] = r0;
 	r0.value = rZ;
 	sregMap[MmixLlvm::rZZ] = r0;
-	emitLeaveVerticeImpl(vctx, builder, regMap, sregMap, target);
+	emitLeaveVerticeViaTrapImpl(vctx, builder, regMap, sregMap);
 }
 
-void MmixLlvm::Private::emitLeaveVerticeViaJump(VerticeContext& vctx, IRBuilder<>& builder, Value* target) 
+void MmixLlvm::Private::emitLeaveVerticeViaJump(VerticeContext& vctx, IRBuilder<>& builder, uint64_t target) 
 {
-	emitLeaveVerticeImpl(vctx, builder, *vctx.RegMap, *vctx.SpecialRegMap, target);
-}
-
-void emitLeaveVerticeViaCondJump(VerticeContext& vctx, IRBuilder<>& builder, 
-	Value* cond, Value* trueTarget, Value* falseTarget)
-{
-	emitLeaveVerticeCondImpl(vctx, builder,  *vctx.RegMap, *vctx.SpecialRegMap, cond, trueTarget, falseTarget); 
+	emitLeaveVerticeImpl(vctx, builder, vctx.RegMap, vctx.SpecialRegMap, target);
 }
 
 Value* MmixLlvm::Private::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,

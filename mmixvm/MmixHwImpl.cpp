@@ -192,20 +192,18 @@ void MmixHwImpl::run(uint64_t xref) {
 	args[0] = GenericValue(&instrAddr);
 	args[1] = GenericValue(&targetAddr);
 	_os->loadExecutable(*this);
-	/// debug
-	uint8_t* heap = &_memory[16384];
-	void (*f)(uint64_t* a,uint64_t* b);
 	while(!_halted) {
 		VerticeMap::iterator itr = _vertices.find(xref0);
 		if (itr == _vertices.end()) {
 			Vertice newVertice;
 			emitSimpleVertice(_lctx, *_module, *this, xref0, newVertice);
+			newVertice.Entry = 
+				(void (*)(uint64_t*,uint64_t*))_ee->getPointerToFunction(newVertice.Function);
 			_vertices[xref0] = newVertice;
 			itr = _vertices.find(xref0);
 		}
 		Vertice& v = itr->second;
-		f = (void (*)(uint64_t*,uint64_t*))_ee->getPointerToFunction(v.Function);
-		f(&instrAddr, &targetAddr);
+		(*v.Entry)(&instrAddr, &targetAddr);
 		if ((targetAddr & (1ull << 63)) == 0) {
 			xref0 = targetAddr;
 		} else {

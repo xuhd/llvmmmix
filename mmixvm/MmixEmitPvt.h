@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <llvm/IR/IRBuilder.h>
 #include <boost/unordered_map.hpp>
+#include "MmixEmit.h"
 #include "MmixDef.h"
 
 namespace MmixLlvm {
@@ -30,9 +31,11 @@ namespace MmixLlvm {
 
 			llvm::BasicBlock *Exit;
 
-			RegistersMap* RegMap;
+			MmixLlvm::EdgeList* Edges;
 
-			RegistersMap* SpecialRegMap;
+			RegistersMap RegMap;
+
+			RegistersMap SpecialRegMap;
 		};
 
 		extern llvm::Value* emitAdjust64Endianness(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* val);
@@ -60,15 +63,12 @@ namespace MmixLlvm {
 		extern void addSpecialRegisterToCache(VerticeContext& vctx, uint8_t reg, llvm::Value* val, bool markDirty);
 
 		extern void emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-			llvm::Value* rY, llvm::Value* rZ, llvm::Value* target);
+			llvm::Value* rY, llvm::Value* rZ, uint64_t target);
 
 		extern void emitLeaveVerticeViaTrap(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-			llvm::Value* rY, llvm::Value* rZ, llvm::Value* target);
+			llvm::Value* rY, llvm::Value* rZ);
 
-		extern void emitLeaveVerticeViaJump(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* target);
-
-		extern void emitLeaveVerticeViaCondJump(VerticeContext& vctx, llvm::IRBuilder<>& builder, 
-			llvm::Value* cond, llvm::Value* trueTarget, llvm::Value* falseTarget);
+		extern void emitLeaveVerticeViaJump(VerticeContext& vctx, llvm::IRBuilder<>& builder, uint64_t target);
 
 		extern void emitLdo(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg);
 

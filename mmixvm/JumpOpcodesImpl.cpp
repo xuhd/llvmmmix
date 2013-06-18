@@ -39,11 +39,11 @@ namespace {
 		Value* cond0 = typename Cond::emitCond(builder, xarg0);
 		builder.CreateCondBr(cond0, condTrueBlock, vctx.Exit);
 		builder.SetInsertPoint(condTrueBlock);
-		Value* target;
+		uint64_t target;
 		if (!backward)
-			target = builder.getInt64(vctx.XPtr + (yzarg << 2));
+			target = vctx.XPtr + (yzarg << 2);
 		else 
-			target = builder.getInt64(vctx.XPtr - (yzarg << 2));
+			target = vctx.XPtr - (yzarg << 2);
 		emitLeaveVerticeViaJump(vctx, builder, target);
 	}
 };
@@ -53,11 +53,11 @@ void MmixLlvm::Private::emitJmp(VerticeContext& vctx, uint32_t xyzarg, bool back
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* target;
+	uint64_t target;
 	if (!backward)
-		target = builder.getInt64(vctx.XPtr + (xyzarg << 2));
+		target = vctx.XPtr + (xyzarg << 2);
 	else 
-		target = builder.getInt64(vctx.XPtr - (xyzarg << 2));
+		target = vctx.XPtr - (xyzarg << 2);
 	emitLeaveVerticeViaJump(vctx, builder, target);
 }
 

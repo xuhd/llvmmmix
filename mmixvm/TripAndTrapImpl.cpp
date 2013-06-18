@@ -28,7 +28,7 @@ void MmixLlvm::Private::emitTrip(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	emitLeaveVerticeViaTrip(vctx, builder, builder.getInt64(yarg), builder.getInt64(zarg), builder.getInt64(0));
+	emitLeaveVerticeViaTrip(vctx, builder, builder.getInt64(yarg), builder.getInt64(zarg), 0);
 }
 
 void MmixLlvm::Private::emitTrap(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
@@ -36,6 +36,5 @@ void MmixLlvm::Private::emitTrap(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* trapVector = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rT);
-	emitLeaveVerticeViaTrap(vctx, builder, builder.getInt64(yarg), builder.getInt64(zarg), trapVector);
+	emitLeaveVerticeViaTrap(vctx, builder, builder.getInt64(yarg), builder.getInt64(zarg));
 }

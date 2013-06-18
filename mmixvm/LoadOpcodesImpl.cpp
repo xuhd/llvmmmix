@@ -165,7 +165,6 @@ void MmixLlvm::Private::emitGet(VerticeContext& vctx, uint8_t xarg, uint8_t zarg
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	RegistersMap& regMap = *vctx.RegMap;
 	Value* val = emitSpecialRegisterLoad(vctx, builder, (MmixLlvm::SpecialReg)zarg);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, val, true);
@@ -176,7 +175,6 @@ void MmixLlvm::Private::emitPut(VerticeContext& vctx, uint8_t xarg, uint8_t zarg
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	RegistersMap& regMap = *vctx.RegMap;
 	Value* val = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
 	builder.CreateBr(vctx.Exit);
 	addSpecialRegisterToCache(vctx, xarg, val, true);

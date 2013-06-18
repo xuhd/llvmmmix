@@ -62,7 +62,7 @@ namespace {
 		Value* newRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(exitViaTrip);
-		emitLeaveVerticeViaTrip(vctx, builder, args[0], args[1], builder.getInt64(getArithTripVector(MmixLlvm::V)));
+		emitLeaveVerticeViaTrip(vctx, builder, args[0], args[1], getArithTripVector(MmixLlvm::V));
 		builder.SetInsertPoint(epilogue);
 		PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 		result->addIncoming(addResult, success);
@@ -130,7 +130,7 @@ void MmixLlvm::Private::emitDiv(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	Value* overflowRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
 	builder.CreateBr(epilogue);
 	builder.SetInsertPoint(exitViaOverflowTrip);
-	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, builder.getInt64(getArithTripVector(MmixLlvm::V)));
+	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, getArithTripVector(MmixLlvm::V));
 	builder.SetInsertPoint(divByZero);
 	Value* divideByZeroAlreadySet = 
 		builder.CreateICmpNE(
@@ -141,7 +141,7 @@ void MmixLlvm::Private::emitDiv(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	Value* divideByZeroRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::D));
 	builder.CreateBr(epilogue);
 	builder.SetInsertPoint(exitViaDivideByZeroTrip);
-	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, builder.getInt64(getArithTripVector(MmixLlvm::D)));
+	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, getArithTripVector(MmixLlvm::D));
 	builder.SetInsertPoint(epilogue);
 	PHINode* quotResult = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 	quotResult->addIncoming(quotient, success);
@@ -421,7 +421,7 @@ void MmixLlvm::Private::emitSl(VerticeContext& vctx, uint8_t xarg, uint8_t yarg,
 	Value* overflowRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
 	builder.CreateBr(epilogue);
 	builder.SetInsertPoint(exitViaOverflowTrip);
-	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, builder.getInt64(getArithTripVector(MmixLlvm::V)));
+	emitLeaveVerticeViaTrip(vctx, builder, yarg0, zarg0, getArithTripVector(MmixLlvm::V));
 	builder.SetInsertPoint(epilogue);
 	PHINode* shlResult = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 	shlResult->addIncoming(result, successBlock);

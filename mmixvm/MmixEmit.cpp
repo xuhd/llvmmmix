@@ -623,43 +623,28 @@ namespace {
 void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, uint64_t xPtr, Vertice& out)
 {
 	std::vector<std::string> twines;
-	RegistersMap regMap;
-	RegistersMap specialRegMap;
 	uint64_t xPtr0 = xPtr;
 	Function* f = cast<Function>(m.getOrInsertFunction(genUniq("fun").str(), Type::getVoidTy(ctx),
 		Type::getInt64PtrTy(ctx),Type::getInt64PtrTy(ctx), (Type *)0));
-	BasicBlock *verticeEntry = BasicBlock::Create(ctx, genUniq("entry") + Twine(xPtr), f);
-	std::vector<VerticeContext> oenv;
-	BasicBlock *block = verticeEntry;
-	for (;;) {
+	VerticeContext vctx;
+	vctx.Ctx = &ctx;
+	vctx.Function = f;
+	vctx.Module = &m;
+	vctx.Edges = &out.EdgeList;
+	BasicBlock *entry = BasicBlock::Create(ctx, genUniq("entry") + Twine(xPtr), f);
+	bool term = false;
+	while (!term) {
 		uint32_t instr = ma.readTetra(xPtr0);
-		VerticeContext e;
-		e.Ctx = &ctx;
-		e.Function = f;
-		e.Module = &m;
-		e.RegMap = &regMap;
-		e.SpecialRegMap = &specialRegMap;
-		e.XPtr = xPtr0;
-		e.Instr = instr;
-		e.Entry = block;
-		if (!oenv.empty())
-			oenv.back().Exit = block;
-		oenv.push_back(e);
-		block = BasicBlock::Create(ctx, getInstrTwine(twines, e.Instr, e.XPtr), f);
-		if (isTerm(instr))
-			break;
-		xPtr0 += sizeof(uint32_t);
+		uint64_t xPtr1 = xPtr += sizeof(uint32_t);
+		term = isTerm(instr);
+		vctx.XPtr = xPtr0;
+		vctx.Instr = instr;
+		vctx.Entry = entry;
+		BasicBlock *exit = !term ? BasicBlock::Create(ctx, getInstrTwine(twines, instr, xPtr1), f) : 0;
+		vctx.Exit = exit;
+		emitInstruction(vctx);
+		entry = exit;
+		xPtr0 = xPtr1;
 	}
-
-	BasicBlock *mainExit = 0;
-
-	if (!oenv.empty()) {
-		mainExit = BasicBlock::Create(ctx, genUniq("epilogue") + Twine(xPtr), f);
-		oenv.back().Exit = mainExit;
-	}
-	
-	for (std::vector<VerticeContext>::iterator itr = oenv.begin(); itr != oenv.end(); ++itr)
-		emitInstruction(*itr);
-
 	out.Function = f;
 }

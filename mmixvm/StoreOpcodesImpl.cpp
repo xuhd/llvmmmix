@@ -46,7 +46,6 @@ namespace {
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
-		RegistersMap& regMap = *vctx.RegMap;
 		Value* xVal = emitRegisterLoad(vctx, builder, xarg);
 		Value* loBoundCk = builder.CreateICmpSGE(xVal, builder.getInt64(LoBound));
 		Value* hiBoundCk = builder.CreateICmpSLE(xVal, builder.getInt64(HiBound));
@@ -74,7 +73,7 @@ namespace {
 		Value* overflowRaVal = builder.CreateOr(initRaVal, builder.getInt64(MmixLlvm::V));
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(exitViaOverflowTrip);
-		emitLeaveVerticeViaTrip(vctx, builder, theA, xVal, builder.getInt64(getArithTripVector(MmixLlvm::V)));
+		emitLeaveVerticeViaTrip(vctx, builder, theA, xVal, getArithTripVector(MmixLlvm::V));
 		builder.SetInsertPoint(epilogue);
 		PHINode* ra = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 		ra->addIncoming(initRaVal, success);
@@ -86,7 +85,6 @@ namespace {
 	template<int Pow2> void EmitS<Pow2>::emitu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
 	{
 		LLVMContext& ctx = *vctx.Ctx;
-		RegistersMap& regMap = *vctx.RegMap; 
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
 		Value* xVal = emitRegisterLoad(vctx, builder, xarg);
@@ -103,7 +101,6 @@ namespace {
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
-		RegistersMap& regMap = *vctx.RegMap;
 		Value* xVal = emitRegisterLoad(vctx, builder, xarg);
 		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
@@ -118,7 +115,6 @@ namespace {
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
 		builder.SetInsertPoint(vctx.Entry);
-		RegistersMap& regMap = *vctx.RegMap;
 		Value* xVal = builder.getInt64(xarg);
 		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);

@@ -12,6 +12,8 @@ namespace MmixLlvm {
 	struct Vertice {
 		EdgeList EdgeList;
 
+		void (*Entry)(uint64_t* a,uint64_t* b);
+
 		llvm::Function* Function;
 	};
 
