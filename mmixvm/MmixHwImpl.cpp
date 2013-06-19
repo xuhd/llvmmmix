@@ -17,11 +17,15 @@ using llvm::outs;
 using MmixLlvm::OS;
 using MmixLlvm::MmixHwImpl;
 using MmixLlvm::HardwareCfg;
+using MmixLlvm::MXByte;
+using MmixLlvm::MXWyde;
+using MmixLlvm::MXTetra;
+using MmixLlvm::MXOcta;
 
 namespace {
 	enum { REGION_BIT_OFFSET = 61 };
-	const uint64_t TWO_ENABLED_BITS = 3LL;
-	const uint64_t ADDR_MASK = ~(TWO_ENABLED_BITS << REGION_BIT_OFFSET);
+	const MXOcta TWO_ENABLED_BITS = 3LL;
+	const MXOcta ADDR_MASK = ~(TWO_ENABLED_BITS << REGION_BIT_OFFSET);
 };
 
 enum {
@@ -124,8 +128,8 @@ void MmixHwImpl::postInit()
 	_ee->addGlobalMapping(addressTranslateTableGlob, &_att[0]);
 }
 
-uint8_t* MmixHwImpl::translateAddr(uint64_t addr, uint8_t mask) {
-	uint64_t addr0 = addr & ~((uint64_t)mask);
+MXByte* MmixHwImpl::translateAddr(MXOcta addr, MXByte mask) {
+	MXOcta addr0 = addr & ~((MXOcta)mask);
 	size_t base = _att[(size_t)((addr0 >> 61) & 3)];
 	size_t offset = addr0 & ADDR_MASK;
 	return &_memory[base + offset];
@@ -145,11 +149,11 @@ namespace {
 	const mpz_class _64MAX("FFFFFFFFFFFFFFFF", 16);
 };
 
-void MmixHwImpl::muluImpl(uint64_t arg1, uint64_t arg2, uint64_t* hiProd, uint64_t* loProd) {
-	mpz_class arg1_ = (mpz_class((uint32_t)(arg1 >> 32)) << 32)
-					   | mpz_class((uint32_t)(arg1 & UINT32_MAX));
-	mpz_class arg2_ = (mpz_class((uint32_t)(arg2 >> 32)) << 32)
-					   | mpz_class((uint32_t)(arg2 & UINT32_MAX));
+void MmixHwImpl::muluImpl(MXOcta arg1, MXOcta arg2, MXOcta* hiProd, MXOcta* loProd) {
+	mpz_class arg1_ = (mpz_class((MXTetra)(arg1 >> 32)) << 32)
+					   | mpz_class((MXTetra)(arg1 & UINT32_MAX));
+	mpz_class arg2_ = (mpz_class((MXTetra)(arg2 >> 32)) << 32)
+					   | mpz_class((MXTetra)(arg2 & UINT32_MAX));
 	mpz_class prod_ = arg1_ * arg2_;
 	mpz_class hiProd_ = prod_ >> 64;
 	mpz_class loProd_ = prod_ & _64MAX;
@@ -157,25 +161,25 @@ void MmixHwImpl::muluImpl(uint64_t arg1, uint64_t arg2, uint64_t* hiProd, uint64
 	*loProd = loProd_.get_ux();
 }
 
-void MmixHwImpl::divuImpl(uint64_t hidivident, uint64_t lodivident, uint64_t divisor, uint64_t* quotient, uint64_t* remainder) {
-	mpz_class divident_ = (mpz_class((uint32_t)(hidivident>>32)) << 96) 
-		                   | (mpz_class((uint32_t)(hidivident & UINT32_MAX)) << 64)
-					       | (mpz_class((uint32_t)(lodivident >> 32)) << 32)
-					       | mpz_class((uint32_t)(lodivident & UINT32_MAX));
-	mpz_class divisor_ = (mpz_class((uint32_t)(divisor >> 32)) << 32)
-					       | mpz_class((uint32_t)(divisor & UINT32_MAX));
+void MmixHwImpl::divuImpl(MXOcta hidivident, MXOcta lodivident, MXOcta divisor, MXOcta* quotient, MXOcta* remainder) {
+	mpz_class divident_ = (mpz_class((MXTetra)(hidivident>>32)) << 96) 
+		                   | (mpz_class((MXTetra)(hidivident & UINT32_MAX)) << 64)
+					       | (mpz_class((MXTetra)(lodivident >> 32)) << 32)
+					       | mpz_class((MXTetra)(lodivident & UINT32_MAX));
+	mpz_class divisor_ = (mpz_class((MXTetra)(divisor >> 32)) << 32)
+					       | mpz_class((MXTetra)(divisor & UINT32_MAX));
 	mpz_class quotient_ = divident_ / divisor_;
 	mpz_class remainder_ = divident_ % divisor_;
 	*quotient = quotient_.get_ux();
 	*remainder = remainder_.get_ux();
 }
 
-uint64_t MmixHwImpl::adjust64EndiannessImpl(uint64_t arg) {
-	uint8_t* ref = (uint8_t*)&arg;
-	return  ((uint64_t)ref[0] << 56) | ((uint64_t)ref[1] << 48)
-	          | ((uint64_t)ref[2] << 40) | ((uint64_t)ref[3] << 32)
-		      | ((uint64_t)ref[4] << 24) | ((uint64_t)ref[5] << 16)
-	          | ((uint64_t)ref[6] << 8)  |  (uint64_t)ref[7];
+MXOcta MmixHwImpl::adjust64EndiannessImpl(MXOcta arg) {
+	MXByte* ref = (MXByte*)&arg;
+	return  ((MXOcta)ref[0] << 56) | ((MXOcta)ref[1] << 48)
+	          | ((MXOcta)ref[2] << 40) | ((MXOcta)ref[3] << 32)
+		      | ((MXOcta)ref[4] << 24) | ((MXOcta)ref[5] << 16)
+	          | ((MXOcta)ref[6] << 8)  |  (MXOcta)ref[7];
 }
 
 boost::shared_ptr<MmixHwImpl> MmixHwImpl::create(const HardwareCfg& hwCfg, boost::shared_ptr<OS> os)
@@ -185,9 +189,9 @@ boost::shared_ptr<MmixHwImpl> MmixHwImpl::create(const HardwareCfg& hwCfg, boost
 	return retVal;
 }
 
-void MmixHwImpl::run(uint64_t xref) {
-	uint64_t xref0 = xref;
-	uint64_t instrAddr, targetAddr;
+void MmixHwImpl::run(MXOcta xref) {
+	MXOcta xref0 = xref;
+	MXOcta instrAddr, targetAddr;
 	std::vector<GenericValue> args(2);
 	args[0] = GenericValue(&instrAddr);
 	args[1] = GenericValue(&targetAddr);
@@ -198,7 +202,7 @@ void MmixHwImpl::run(uint64_t xref) {
 			Vertice newVertice;
 			emitSimpleVertice(_lctx, *_module, *this, xref0, newVertice);
 			newVertice.Entry = 
-				(void (*)(uint64_t*,uint64_t*))_ee->getPointerToFunction(newVertice.Function);
+				(void (*)(MXOcta*,MXOcta*))_ee->getPointerToFunction(newVertice.Function);
 			_vertices[xref0] = newVertice;
 			itr = _vertices.find(xref0);
 		}
@@ -217,62 +221,62 @@ void MmixHwImpl::halt() {
 	_halted = true;
 }
 
-uint64_t MmixHwImpl::getReg(uint8_t reg) {
+MXOcta MmixHwImpl::getReg(MXByte reg) {
 	return _registers[reg];
 }
 
-void MmixHwImpl::setReg(uint8_t reg, uint64_t value) {
+void MmixHwImpl::setReg(MXByte reg, MXOcta value) {
 	_registers[reg] = value;
 }
 
-uint64_t MmixHwImpl::getSpReg(MmixLlvm::SpecialReg sreg) {
+MXOcta MmixHwImpl::getSpReg(MmixLlvm::SpecialReg sreg) {
 	return _spRegisters[sreg];
 }
 
-void MmixHwImpl::setSpReg(MmixLlvm::SpecialReg sreg, uint64_t value) {
+void MmixHwImpl::setSpReg(MmixLlvm::SpecialReg sreg, MXOcta value) {
 	_spRegisters[sreg] = value;
 }
 
-uint8_t MmixHwImpl::readByte(uint64_t ref) {
+MXByte MmixHwImpl::readByte(MXOcta ref) {
 	return *translateAddr(ref, 0);
 }
 
-uint16_t MmixHwImpl::readWyde(uint64_t ref) {
-	uint8_t* t = translateAddr(ref, 1);
-	return MmixLlvm::Util::adjust16Endianness(ArrayRef<uint8_t>(t, t + 2));
+MXWyde MmixHwImpl::readWyde(MXOcta ref) {
+	MXByte* t = translateAddr(ref, 1);
+	return MmixLlvm::Util::adjust16Endianness(ArrayRef<MXByte>(t, t + 2));
 }
 
-uint32_t MmixHwImpl::readTetra(uint64_t ref) {
-	uint8_t* t = translateAddr(ref, 3);
-	return MmixLlvm::Util::adjust32Endianness(ArrayRef<uint8_t>(t, t + 4));
+MXTetra MmixHwImpl::readTetra(MXOcta ref) {
+	MXByte* t = translateAddr(ref, 3);
+	return MmixLlvm::Util::adjust32Endianness(ArrayRef<MXByte>(t, t + 4));
 }
 
-uint64_t MmixHwImpl::readOcta(uint64_t ref) {
-	uint8_t* t = translateAddr(ref, 7);
-	return MmixLlvm::Util::adjust64Endianness(ArrayRef<uint8_t>(t, t + 8));
+MXOcta MmixHwImpl::readOcta(MXOcta ref) {
+	MXByte* t = translateAddr(ref, 7);
+	return MmixLlvm::Util::adjust64Endianness(ArrayRef<MXByte>(t, t + 8));
 }
 
-void MmixHwImpl::writeByte(uint64_t ref, uint8_t arg) {
-	uint8_t* t = translateAddr(ref, 0);
+void MmixHwImpl::writeByte(MXOcta ref, MXByte arg) {
+	MXByte* t = translateAddr(ref, 0);
 	*t = arg;
 }
 
-void MmixHwImpl::writeWyde(uint64_t ref, uint16_t arg) {
-	uint16_t* t = (uint16_t*)translateAddr(ref, 1);
-	uint8_t* p0 = (uint8_t*)&arg;
-	*t = MmixLlvm::Util::adjust16Endianness(ArrayRef<uint8_t>(p0, p0 + 2));
+void MmixHwImpl::writeWyde(MXOcta ref, MXWyde arg) {
+	MXWyde* t = (MXWyde*)translateAddr(ref, 1);
+	MXByte* p0 = (MXByte*)&arg;
+	*t = MmixLlvm::Util::adjust16Endianness(ArrayRef<MXByte>(p0, p0 + 2));
 }
 
-void MmixHwImpl::writeTetra(uint64_t ref, uint32_t arg) {
-	uint32_t* t = (uint32_t*)translateAddr(ref, 3);
-	uint8_t* p0 = (uint8_t*)&arg;
-	*t = MmixLlvm::Util::adjust32Endianness(ArrayRef<uint8_t>(p0, p0 + 4));
+void MmixHwImpl::writeTetra(MXOcta ref, MXTetra arg) {
+	MXTetra* t = (MXTetra*)translateAddr(ref, 3);
+	MXByte* p0 = (MXByte*)&arg;
+	*t = MmixLlvm::Util::adjust32Endianness(ArrayRef<MXByte>(p0, p0 + 4));
 }
 
-void MmixHwImpl::writeOcta(uint64_t ref, uint64_t arg) {
-	uint64_t* t = (uint64_t*)translateAddr(ref, 7);
-	uint8_t* p0 = (uint8_t*)&arg;
-	*t = MmixLlvm::Util::adjust64Endianness(ArrayRef<uint8_t>(p0, p0 + 8));
+void MmixHwImpl::writeOcta(MXOcta ref, MXOcta arg) {
+	MXOcta* t = (MXOcta*)translateAddr(ref, 7);
+	MXByte* p0 = (MXByte*)&arg;
+	*t = MmixLlvm::Util::adjust64Endianness(ArrayRef<MXByte>(p0, p0 + 8));
 }
 
 MmixHwImpl::~MmixHwImpl()

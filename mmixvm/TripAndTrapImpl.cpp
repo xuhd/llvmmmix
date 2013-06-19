@@ -23,7 +23,7 @@ using namespace MmixLlvm::Private;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
 
-void MmixLlvm::Private::emitTrip(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitTrip(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
@@ -31,7 +31,7 @@ void MmixLlvm::Private::emitTrip(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	emitLeaveVerticeViaTrip(vctx, builder, builder.getInt64(yarg), builder.getInt64(zarg), 0);
 }
 
-void MmixLlvm::Private::emitTrap(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitTrap(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);

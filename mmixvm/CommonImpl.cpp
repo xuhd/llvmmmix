@@ -21,11 +21,14 @@ using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
+using MmixLlvm::MXByte;
+using MmixLlvm::MXTetra;
+using MmixLlvm::MXOcta;
 
 namespace {
-	const uint32_t REGION_BIT_OFFSET = 61;
-	const uint64_t TWO_ENABLED_BITS = 3i64;
-	const uint64_t ADDR_MASK = ~(TWO_ENABLED_BITS << REGION_BIT_OFFSET);
+	const MXTetra REGION_BIT_OFFSET = 61;
+	const MXOcta TWO_ENABLED_BITS = 3i64;
+	const MXOcta ADDR_MASK = ~(TWO_ENABLED_BITS << REGION_BIT_OFFSET);
 };
 
 Value* MmixLlvm::Private::emitAdjust64Endianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val) {
@@ -55,7 +58,7 @@ Value* MmixLlvm::Private::emitAdjust16Endianness(VerticeContext& vctx, IRBuilder
 }
 
 namespace {
-	Value* emitRegisterLoadImpl(VerticeContext& vctx, IRBuilder<>& builder, uint8_t reg, bool cache) {
+	Value* emitRegisterLoadImpl(VerticeContext& vctx, IRBuilder<>& builder, MXByte reg, bool cache) {
 		LLVMContext& ctx = *vctx.Ctx;
 		Value *regGlob = vctx.Module->getGlobalVariable("Registers");
 		Value* retVal;
@@ -100,21 +103,21 @@ namespace {
 	}
 };
 
-void MmixLlvm::Private::addRegisterToCache(VerticeContext& vctx, uint8_t reg, Value* val, bool markDirty) {
+void MmixLlvm::Private::addRegisterToCache(VerticeContext& vctx, MXByte reg, Value* val, bool markDirty) {
 	RegisterRecord r0;
 	r0.value = val;
 	r0.changed = markDirty;
 	vctx.RegMap[reg] = r0;
 }
 
-void MmixLlvm::Private::addSpecialRegisterToCache(VerticeContext& vctx, uint8_t reg, Value* val, bool markDirty) {
+void MmixLlvm::Private::addSpecialRegisterToCache(VerticeContext& vctx, MXByte reg, Value* val, bool markDirty) {
 	RegisterRecord r0;
 	r0.value = val;
 	r0.changed = markDirty;
 	vctx.SpecialRegMap[reg] = r0;
 }
 
-Value* MmixLlvm::Private::emitRegisterLoad(VerticeContext& vctx, IRBuilder<>& builder, uint8_t reg) {
+Value* MmixLlvm::Private::emitRegisterLoad(VerticeContext& vctx, IRBuilder<>& builder, MXByte reg) {
 	return emitRegisterLoadImpl(vctx, builder, reg, true);
 }
 
@@ -159,7 +162,7 @@ namespace {
 	}
 
 	void emitLeaveVerticeImpl(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-		RegistersMap& regMap, RegistersMap& sregMap, uint64_t target)
+		RegistersMap& regMap, RegistersMap& sregMap, MXOcta target)
 	{
 		saveRegisters(vctx, builder, regMap, sregMap);
 		MmixLlvm::EdgeList& edgeList = *vctx.Edges;
@@ -183,7 +186,7 @@ namespace {
 };
 
 void MmixLlvm::Private::emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-	llvm::Value* rY, llvm::Value* rZ, uint64_t target)
+	llvm::Value* rY, llvm::Value* rZ, MXOcta target)
 {
 	RegistersMap regMap(vctx.RegMap);
 	RegistersMap sregMap(vctx.SpecialRegMap);
@@ -226,7 +229,7 @@ void MmixLlvm::Private::emitLeaveVerticeViaTrap(VerticeContext& vctx, IRBuilder<
 	emitLeaveVerticeViaTrapImpl(vctx, builder, regMap, sregMap);
 }
 
-void MmixLlvm::Private::emitLeaveVerticeViaJump(VerticeContext& vctx, IRBuilder<>& builder, uint64_t target) 
+void MmixLlvm::Private::emitLeaveVerticeViaJump(VerticeContext& vctx, IRBuilder<>& builder, MXOcta target) 
 {
 	emitLeaveVerticeImpl(vctx, builder, vctx.RegMap, vctx.SpecialRegMap, target);
 }
@@ -271,7 +274,7 @@ void MmixLlvm::Private::emitStoreMem(LLVMContext& ctx, Module& m, Function& f,
 	builder.CreateStore(val, targetPtr);
 }
 
-uint64_t MmixLlvm::Private::getArithTripVector(MmixLlvm::ArithFlag flag) {
+MXOcta MmixLlvm::Private::getArithTripVector(MmixLlvm::ArithFlag flag) {
 	switch (flag) {
 	case MmixLlvm::X:
 		return 128;

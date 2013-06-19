@@ -5,13 +5,13 @@
 
 namespace MmixLlvm {
 	struct RegAccessor {
-		virtual uint64_t getReg(uint8_t reg) = 0;
+		virtual MXOcta getReg(MXByte reg) = 0;
 
-		virtual void setReg(uint8_t reg, uint64_t value) = 0;
+		virtual void setReg(MXByte reg, MXOcta value) = 0;
 
-		virtual uint64_t getSpReg(MmixLlvm::SpecialReg sreg) = 0;
+		virtual MXOcta getSpReg(MmixLlvm::SpecialReg sreg) = 0;
 
-		virtual void setSpReg(MmixLlvm::SpecialReg reg, uint64_t value) = 0;
+		virtual void setSpReg(MmixLlvm::SpecialReg reg, MXOcta value) = 0;
 
 		virtual ~RegAccessor() = 0;
 	};

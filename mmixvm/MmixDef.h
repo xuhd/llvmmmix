@@ -3,15 +3,23 @@
 #include <stdint.h>
 
 namespace MmixLlvm {
-	extern const uint64_t TEXT_SEG;
+	typedef uint8_t MXByte;
 
-	extern const uint64_t DATA_SEG;
+	typedef uint16_t MXWyde;
 
-	extern const uint64_t POOL_SEG;
+	typedef uint32_t MXTetra;
 
-	extern const uint64_t STACK_SEG;
+	typedef uint64_t MXOcta;
 
-	extern const uint64_t OS_TRAP_VECTOR;
+	extern const MXOcta TEXT_SEG;
+
+	extern const MXOcta DATA_SEG;
+
+	extern const MXOcta POOL_SEG;
+
+	extern const MXOcta STACK_SEG;
+
+	extern const MXOcta OS_TRAP_VECTOR;
 
 	enum MmixOpcode {
         //#0			  #1			   #2			  #3			  #4			   #5			  #6			  #7

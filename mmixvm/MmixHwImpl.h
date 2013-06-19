@@ -15,13 +15,13 @@
 
 namespace MmixLlvm {
 	class MmixHwImpl: public Engine {
-		std::vector<uint64_t> _registers;
+		std::vector<MXOcta> _registers;
 
-		std::vector<uint64_t> _spRegisters;
+		std::vector<MXOcta> _spRegisters;
 
-		std::vector<uint8_t> _memory;
+		std::vector<MXByte> _memory;
 
-		std::vector<uint32_t> _att;
+		std::vector<MXTetra> _att;
 
 		llvm::Module* _module;
 
@@ -31,7 +31,7 @@ namespace MmixLlvm {
 
 		boost::shared_ptr<OS> _os;
 
-		typedef boost::unordered_map<uint64_t, Vertice> VerticeMap;
+		typedef boost::unordered_map<MXOcta, Vertice> VerticeMap;
 
 		VerticeMap _vertices;
 
@@ -41,47 +41,47 @@ namespace MmixLlvm {
 
 		void postInit();
 
-		uint8_t* translateAddr(uint64_t addr, uint8_t mask);
+		MXByte* translateAddr(MXOcta addr, MXByte mask);
 
 		static void debugInt32(int arg);
 
 		static void debugInt64(int64_t arg);
 	
-		static void muluImpl(uint64_t arg1, uint64_t arg2, uint64_t* hiProd, uint64_t* loProd);
+		static void muluImpl(MXOcta arg1, MXOcta arg2, MXOcta* hiProd, MXOcta* loProd);
 
-		static void divuImpl(uint64_t hidivident, uint64_t lodivident, uint64_t divisor, uint64_t* quotient, uint64_t* remainder);
+		static void divuImpl(MXOcta hidivident, MXOcta lodivident, MXOcta divisor, MXOcta* quotient, MXOcta* remainder);
 
-		static uint64_t adjust64EndiannessImpl(uint64_t arg);
+		static MXOcta adjust64EndiannessImpl(MXOcta arg);
 	public:
 		static boost::shared_ptr<MmixHwImpl> create(const HardwareCfg& hwCfg, boost::shared_ptr<OS> os);
 
-		virtual void run(uint64_t xref);
+		virtual void run(MXOcta xref);
 
 		virtual void halt();
 
-		virtual uint64_t getReg(uint8_t reg);
+		virtual MXOcta getReg(MXByte reg);
 
-		virtual void setReg(uint8_t reg, uint64_t value);
+		virtual void setReg(MXByte reg, MXOcta value);
 
-		virtual uint64_t getSpReg(MmixLlvm::SpecialReg sreg);
+		virtual MXOcta getSpReg(MmixLlvm::SpecialReg sreg);
 
-		virtual void setSpReg(MmixLlvm::SpecialReg sreg, uint64_t value);
+		virtual void setSpReg(MmixLlvm::SpecialReg sreg, MXOcta value);
 
-		virtual uint8_t readByte(uint64_t ref);
+		virtual MXByte readByte(MXOcta ref);
 
-		virtual uint16_t readWyde(uint64_t ref);
+		virtual MXWyde readWyde(MXOcta ref);
 
-		virtual uint32_t readTetra(uint64_t ref);
+		virtual MXTetra readTetra(MXOcta ref);
 
-		virtual uint64_t readOcta(uint64_t ref);
+		virtual MXOcta readOcta(MXOcta ref);
 
-		virtual void writeByte(uint64_t ref, uint8_t arg);
+		virtual void writeByte(MXOcta ref, MXByte arg);
 
-		virtual void writeWyde(uint64_t ref, uint16_t arg);
+		virtual void writeWyde(MXOcta ref, MXWyde arg);
 
-		virtual void writeTetra(uint64_t ref, uint32_t arg);
+		virtual void writeTetra(MXOcta ref, MXTetra arg);
 
-		virtual void writeOcta(uint64_t ref, uint64_t arg);
+		virtual void writeOcta(MXOcta ref, MXOcta arg);
 
 		virtual ~MmixHwImpl();
 	};

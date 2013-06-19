@@ -7,7 +7,7 @@
 namespace MmixLlvm {
 	struct OS {
 		virtual void loadExecutable(Engine& e) = 0;
-		virtual void handleTrap(Engine& e, uint64_t vector) = 0;
+		virtual MXOcta handleTrap(Engine& e, MXOcta instr, MXOcta vector) = 0;
 		virtual ~OS() = 0;
 	};
 };

@@ -19,15 +19,18 @@ using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
+using MmixLlvm::MXByte;
+using MmixLlvm::MXTetra;
+using MmixLlvm::MXOcta;
 
 namespace {
 	template<class Cond> 
 	struct EmitBranch {
-		static void emit(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward);
+		static void emit(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward);
 	};
 
 	template<class Cond> void EmitBranch<Cond>::emit(VerticeContext& vctx,
-		uint8_t xarg, uint32_t yzarg, bool backward)
+		MXByte xarg, MXTetra yzarg, bool backward)
 	{
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
@@ -39,7 +42,7 @@ namespace {
 		Value* cond0 = typename Cond::emitCond(builder, xarg0);
 		builder.CreateCondBr(cond0, condTrueBlock, vctx.Exit);
 		builder.SetInsertPoint(condTrueBlock);
-		uint64_t target;
+		MXOcta target;
 		if (!backward)
 			target = vctx.XPtr + (yzarg << 2);
 		else 
@@ -49,11 +52,11 @@ namespace {
 };
 
 
-void MmixLlvm::Private::emitJmp(VerticeContext& vctx, uint32_t xyzarg, bool backward) {
+void MmixLlvm::Private::emitJmp(VerticeContext& vctx, MXTetra xyzarg, bool backward) {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	uint64_t target;
+	MXOcta target;
 	if (!backward)
 		target = vctx.XPtr + (xyzarg << 2);
 	else 
@@ -61,7 +64,7 @@ void MmixLlvm::Private::emitJmp(VerticeContext& vctx, uint32_t xyzarg, bool back
 	emitLeaveVerticeViaJump(vctx, builder, target);
 }
 
-void MmixLlvm::Private::emitBn(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward) {
+void MmixLlvm::Private::emitBn(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward) {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpSLT(arg, builder.getInt64(0));
@@ -70,7 +73,7 @@ void MmixLlvm::Private::emitBn(VerticeContext& vctx, uint8_t xarg, uint32_t yzar
 	EmitBranch<Cond>::emit(vctx, xarg, yzarg, backward);
 }
 
-void MmixLlvm::Private::emitBz(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward) {
+void MmixLlvm::Private::emitBz(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward) {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpEQ(arg, builder.getInt64(0));
@@ -79,7 +82,7 @@ void MmixLlvm::Private::emitBz(VerticeContext& vctx, uint8_t xarg, uint32_t yzar
 	EmitBranch<Cond>::emit(vctx, xarg, yzarg, backward);
 }
 
-void MmixLlvm::Private::emitBp(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward) {
+void MmixLlvm::Private::emitBp(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward) {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpSGT(arg, builder.getInt64(0));
@@ -88,7 +91,7 @@ void MmixLlvm::Private::emitBp(VerticeContext& vctx, uint8_t xarg, uint32_t yzar
 	EmitBranch<Cond>::emit(vctx, xarg, yzarg, backward);
 }
 
-void MmixLlvm::Private::emitBod(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward) {
+void MmixLlvm::Private::emitBod(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward) {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpNE(builder.CreateAnd(arg, builder.getInt64(1)), builder.getInt64(0));
@@ -97,7 +100,7 @@ void MmixLlvm::Private::emitBod(VerticeContext& vctx, uint8_t xarg, uint32_t yza
 	EmitBranch<Cond>::emit(vctx, xarg, yzarg, backward);
 }
 
-void MmixLlvm::Private::emitBnn(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward) {
+void MmixLlvm::Private::emitBnn(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward) {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpSGE(arg, builder.getInt64(0));
@@ -106,7 +109,7 @@ void MmixLlvm::Private::emitBnn(VerticeContext& vctx, uint8_t xarg, uint32_t yza
 	EmitBranch<Cond>::emit(vctx, xarg, yzarg, backward);
 }
 
-void MmixLlvm::Private::emitBnz(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward) {
+void MmixLlvm::Private::emitBnz(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward) {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpNE(arg, builder.getInt64(0));
@@ -115,7 +118,7 @@ void MmixLlvm::Private::emitBnz(VerticeContext& vctx, uint8_t xarg, uint32_t yza
 	EmitBranch<Cond>::emit(vctx, xarg, yzarg, backward);
 }
 
-void MmixLlvm::Private::emitBnp(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward) {
+void MmixLlvm::Private::emitBnp(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward) {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpSLE(arg, builder.getInt64(0));
@@ -124,7 +127,7 @@ void MmixLlvm::Private::emitBnp(VerticeContext& vctx, uint8_t xarg, uint32_t yza
 	EmitBranch<Cond>::emit(vctx, xarg, yzarg, backward);
 }
 
-void MmixLlvm::Private::emitBev(VerticeContext& vctx, uint8_t xarg, uint32_t yzarg, bool backward) {
+void MmixLlvm::Private::emitBev(VerticeContext& vctx, MXByte xarg, MXTetra yzarg, bool backward) {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
 			return builder.CreateICmpEQ(builder.CreateAnd(arg, builder.getInt64(1)), builder.getInt64(0));

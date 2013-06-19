@@ -7,15 +7,15 @@
 #include "MemAccess.h"
 
 namespace MmixLlvm {
-	typedef std::vector<uint64_t> EdgeList;
+	typedef std::vector<MXOcta> EdgeList;
 
 	struct Vertice {
 		EdgeList EdgeList;
 
-		void (*Entry)(uint64_t* a,uint64_t* b);
+		void (*Entry)(MXOcta* a,MXOcta* b);
 
 		llvm::Function* Function;
 	};
 
-	void emitSimpleVertice(llvm::LLVMContext& ctx, llvm::Module& m, MmixLlvm::MemAccessor& ma, uint64_t xPtr, Vertice& out);
+	void emitSimpleVertice(llvm::LLVMContext& ctx, llvm::Module& m, MmixLlvm::MemAccessor& ma, MXOcta xPtr, Vertice& out);
 };

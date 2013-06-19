@@ -21,10 +21,14 @@ using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
 using MmixLlvm::EdgeList;
 using MmixLlvm::MemAccessor;
+using MmixLlvm::MXByte;
+using MmixLlvm::MXWyde;
+using MmixLlvm::MXTetra;
+using MmixLlvm::MXOcta;
 
 namespace {
-	bool isTerm(uint32_t instr) {
-		uint8_t o0 = (uint8_t) (instr >> 24);
+	bool isTerm(MXTetra instr) {
+		MXByte o0 = (MXByte) (instr >> 24);
 		switch(o0) {
 		case MmixLlvm::JMP:
 		case MmixLlvm::JMPB:
@@ -38,10 +42,10 @@ namespace {
 
 	void emitInstruction(VerticeContext& vctx)
 	{
-		uint8_t o0 = (uint8_t) (vctx.Instr >> 24);
-		uint8_t xarg = (uint8_t) ((vctx.Instr >> 16) & 0xff);
-		uint8_t yarg = (uint8_t) ((vctx.Instr >> 8) & 0xff);
-		uint8_t zarg = (uint8_t) (vctx.Instr & 0xff);
+		MXByte o0 = (MXByte) (vctx.Instr >> 24);
+		MXByte xarg = (MXByte) ((vctx.Instr >> 16) & 0xff);
+		MXByte yarg = (MXByte) ((vctx.Instr >> 8) & 0xff);
+		MXByte zarg = (MXByte) (vctx.Instr & 0xff);
 		switch(o0) {
 		case MmixLlvm::LDO:
 			emitLdo(vctx, xarg, yarg, zarg);
@@ -443,52 +447,52 @@ namespace {
 			emitSadd(vctx, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SETH:
-			emitSeth(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitSeth(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::SETMH:
-			emitSetmh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitSetmh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::SETML:
-			emitSetml(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitSetml(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::SETL:
-			emitSetl(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitSetl(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::INCH:
-			emitInch(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitInch(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::INCMH:
-			emitIncmh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitIncmh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::INCML:
-			emitIncml(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitIncml(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::INCL:
-			emitIncl(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitIncl(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ORH:
-			emitOrh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitOrh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ORMH:
-			emitOrmh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitOrmh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ORML:
-			emitOrml(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitOrml(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ORL:
-			emitOrl(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitOrl(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ANDNH:
-			emitAndnh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitAndnh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ANDNMH:
-			emitAndnmh(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitAndnmh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ANDNML:
-			emitAndnml(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitAndnml(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ANDNL:
-			emitAndnl(vctx, xarg, ((uint16_t)yarg << 8) | zarg);
+			emitAndnl(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::TRIP:
 			emitTrip(vctx, xarg, yarg, zarg);
@@ -497,112 +501,112 @@ namespace {
 			emitTrap(vctx, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::GETA:
-			emitGeta(vctx, xarg, ((uint16_t)yarg << 8) | zarg, false);
+			emitGeta(vctx, xarg, ((MXWyde)yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::GETAB:
-			emitGeta(vctx, xarg, ((uint16_t)yarg << 8) | zarg, true);
+			emitGeta(vctx, xarg, ((MXWyde)yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::JMP:
-			emitJmp(vctx, ((uint32_t)xarg << 16) | ((uint32_t)yarg << 8) | zarg, false);
+			emitJmp(vctx, ((MXTetra)xarg << 16) | ((MXTetra)yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::JMPB:
-			emitJmp(vctx, ((uint32_t)xarg << 16) | ((uint32_t)yarg << 8) | zarg, true);
+			emitJmp(vctx, ((MXTetra)xarg << 16) | ((MXTetra)yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BN:
-			emitBn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BNB:
-			emitBn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BZ:
-			emitBz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BZB:
-			emitBz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BP:
-			emitBp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BPB:
-			emitBp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BOD:
-			emitBod(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBod(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BODB:
-			emitBod(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBod(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BNN:
-			emitBnn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBnn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BNNB:
-			emitBnn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBnn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BNZ:
-			emitBnz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBnz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BNZB:
-			emitBnz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBnz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BNP:
-			emitBnp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBnp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BNPB:
-			emitBnp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBnp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BEV:
-			emitBev(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBev(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BEVB:
-			emitBev(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBev(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBN:
-			emitBn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBNB:
-			emitBn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBZ:
-			emitBz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBZB:
-			emitBz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBP:
-			emitBp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBPB:
-			emitBp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBOD:
-			emitBod(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBod(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBODB:
-			emitBod(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBod(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBNN:
-			emitBnn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBnn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBNNB:
-			emitBnn(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBnn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBNZ:
-			emitBnz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBnz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBNZB:
-			emitBnz(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBnz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBNP:
-			emitBnp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBnp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBNPB:
-			emitBnp(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBnp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBEV:
-			emitBev(vctx, xarg, ((uint16_t) yarg << 8) | zarg, false);
+			emitBev(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBEVB:
-			emitBev(vctx, xarg, ((uint16_t) yarg << 8) | zarg, true);
+			emitBev(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		default:
 			assert(0 && "Not implemented");
@@ -611,7 +615,7 @@ namespace {
 }
 
 namespace {
-	Twine getInstrTwine(std::vector<std::string>& twines, uint32_t instr, uint64_t xptr)
+	Twine getInstrTwine(std::vector<std::string>& twines, MXTetra instr, MXOcta xptr)
 	{
 		std::ostringstream oss;
 		oss<<"instr_"<<std::hex<<instr<<"@"<<xptr<<"#";
@@ -620,10 +624,10 @@ namespace {
 	}
 };
 
-void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, uint64_t xPtr, Vertice& out)
+void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, MXOcta xPtr, Vertice& out)
 {
 	std::vector<std::string> twines;
-	uint64_t xPtr0 = xPtr;
+	MXOcta xPtr0 = xPtr;
 	Function* f = cast<Function>(m.getOrInsertFunction(genUniq("fun").str(), Type::getVoidTy(ctx),
 		Type::getInt64PtrTy(ctx),Type::getInt64PtrTy(ctx), (Type *)0));
 	VerticeContext vctx;
@@ -634,8 +638,8 @@ void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, u
 	BasicBlock *entry = BasicBlock::Create(ctx, genUniq("entry") + Twine(xPtr), f);
 	bool term = false;
 	while (!term) {
-		uint32_t instr = ma.readTetra(xPtr0);
-		uint64_t xPtr1 = xPtr += sizeof(uint32_t);
+		MXTetra instr = ma.readTetra(xPtr0);
+		MXOcta xPtr1 = xPtr += sizeof(MXTetra);
 		term = isTerm(instr);
 		vctx.XPtr = xPtr0;
 		vctx.Instr = instr;

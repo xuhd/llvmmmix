@@ -20,6 +20,7 @@ using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
+using MmixLlvm::MXByte;
 
 namespace {
 	template<int Pow2> class EmitS
@@ -30,18 +31,18 @@ namespace {
 		static Value* adjustEndianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val);
 		static Value* createStoreCast(LLVMContext& ctx, IRBuilder<>& builder, Value* val, int isSigned);
 	public:
-		static void emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
-		static void emitu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
-		static void emitht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
-		static void emitco(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
+		static void emit(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
+		static void emitu(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
+		static void emitht(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
+		static void emitco(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
 	};
 
-	void EmitS<3>::emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	void EmitS<3>::emit(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
 		emitu(vctx, xarg, yarg, zarg, immediate);
 	}
 
-	template<int Pow2> void EmitS<Pow2>::emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	template<int Pow2> void EmitS<Pow2>::emit(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
@@ -82,7 +83,7 @@ namespace {
 		addSpecialRegisterToCache(vctx, MmixLlvm::rA, ra, true);
 	}
 
-	template<int Pow2> void EmitS<Pow2>::emitu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	template<int Pow2> void EmitS<Pow2>::emitu(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
@@ -96,7 +97,7 @@ namespace {
 		builder.CreateBr(vctx.Exit);
 	}
 
-	template<> void EmitS<2>::emitht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	template<> void EmitS<2>::emitht(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
@@ -110,7 +111,7 @@ namespace {
 		builder.CreateBr(vctx.Exit);
 	}
 
-	template<> void EmitS<3>::emitco(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+	template<> void EmitS<3>::emitco(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
 		LLVMContext& ctx = *vctx.Ctx;
 		IRBuilder<> builder(ctx);
@@ -175,92 +176,92 @@ namespace {
 	}
 };
 
-void MmixLlvm::Private::emitSto(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitSto(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<3>::emit(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitStoi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStoi(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<3>::emit(vctx, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitStt(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStt(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<2>::emit(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitStti(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStti(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<2>::emit(vctx, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitStw(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStw(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<1>::emit(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitStwi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStwi(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<1>::emit(vctx, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitStb(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStb(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<0>::emit(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitStbi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStbi(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<0>::emit(vctx, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitSttu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitSttu(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<2>::emitu(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitSttui(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitSttui(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<2>::emitu(vctx, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitStwu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStwu(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<1>::emitu(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitStwui(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStwui(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<1>::emitu(vctx, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitStbu(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStbu(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<0>::emitu(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitStbui(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStbui(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<0>::emitu(vctx, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitStht(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStht(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<2>::emitht(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitSthti(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitSthti(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<2>::emitht(vctx, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitStco(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStco(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<3>::emitco(vctx, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitStcoi(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg)
+void MmixLlvm::Private::emitStcoi(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	EmitS<3>::emitco(vctx, xarg, yarg, zarg, true);
 }

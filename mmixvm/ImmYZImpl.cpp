@@ -23,165 +23,165 @@ using namespace MmixLlvm::Private;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
 
-void MmixLlvm::Private::emitSeth(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitSeth(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.getInt64((uint64_t)yzarg << 48);
+	Value* result = builder.getInt64((MXOcta)yzarg << 48);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitSetmh(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitSetmh(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.getInt64((uint64_t)yzarg << 32);
+	Value* result = builder.getInt64((MXOcta)yzarg << 32);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitSetml(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitSetml(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.getInt64((uint64_t)yzarg << 16);
+	Value* result = builder.getInt64((MXOcta)yzarg << 16);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitSetl(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitSetl(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.getInt64((uint64_t)yzarg);
+	Value* result = builder.getInt64((MXOcta)yzarg);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitInch(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitInch(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateAdd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<48));
+	Value* result = builder.CreateAdd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<48));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitIncmh(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitIncmh(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateAdd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<32));
+	Value* result = builder.CreateAdd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<32));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitIncml(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitIncml(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateAdd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<16));
+	Value* result = builder.CreateAdd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<16));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitIncl(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitIncl(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
 	Value *xval0 = emitRegisterLoad(vctx, builder, xarg);
 	//debugInt64(vctx, builder, xval0);
-	Value* result = builder.CreateAdd(xval0, builder.getInt64((uint64_t) yzarg));
+	Value* result = builder.CreateAdd(xval0, builder.getInt64((MXOcta) yzarg));
 	//debugInt64(vctx, builder, result);
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitOrh(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitOrh(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateOr(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<48));
+	Value* result = builder.CreateOr(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<48));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitOrmh(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitOrmh(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateOr(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<32));
+	Value* result = builder.CreateOr(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<32));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitOrml(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitOrml(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateOr(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<16));
+	Value* result = builder.CreateOr(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<16));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitOrl(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitOrl(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateOr(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg));
+	Value* result = builder.CreateOr(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitAndnh(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitAndnh(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateAnd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<48));
+	Value* result = builder.CreateAnd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<48));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitAndnmh(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitAndnmh(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateAnd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<32));
+	Value* result = builder.CreateAnd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<32));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitAndnml(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitAndnml(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateAnd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg<<16));
+	Value* result = builder.CreateAnd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg<<16));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }
 
-void MmixLlvm::Private::emitAndnl(VerticeContext& vctx, uint8_t xarg, uint16_t yzarg)
+void MmixLlvm::Private::emitAndnl(VerticeContext& vctx, MXByte xarg, MXWyde yzarg)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
 	builder.SetInsertPoint(vctx.Entry);
-	Value* result = builder.CreateAnd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((uint64_t) yzarg));
+	Value* result = builder.CreateAnd(emitRegisterLoad(vctx, builder, xarg), builder.getInt64((MXOcta) yzarg));
 	builder.CreateBr(vctx.Exit);
 	addRegisterToCache(vctx, xarg, result, true);
 }

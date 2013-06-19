@@ -22,15 +22,16 @@ using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
+using MmixLlvm::MXByte;
 
 namespace {
 	template<typename BitOp> 
 		struct EmitCond {
-			static void emit(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate);
+			static void emit(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
 		};
 
 		template<class BitOp> void EmitCond<BitOp>::emit(VerticeContext& vctx, 
-			uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+			MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 		{
 			LLVMContext& ctx = *vctx.Ctx;
 			IRBuilder<> builder(ctx);
@@ -43,7 +44,7 @@ namespace {
 		}
 };
 
-void MmixLlvm::Private::emitAnd(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitAnd(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -53,7 +54,7 @@ void MmixLlvm::Private::emitAnd(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitOr(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitOr(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -63,7 +64,7 @@ void MmixLlvm::Private::emitOr(VerticeContext& vctx, uint8_t xarg, uint8_t yarg,
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitXor(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitXor(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -73,7 +74,7 @@ void MmixLlvm::Private::emitXor(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitAndn(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitAndn(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -83,7 +84,7 @@ void MmixLlvm::Private::emitAndn(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitOrn(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitOrn(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -93,7 +94,7 @@ void MmixLlvm::Private::emitOrn(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitNand(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitNand(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -103,7 +104,7 @@ void MmixLlvm::Private::emitNand(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitNor(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitNor(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -113,7 +114,7 @@ void MmixLlvm::Private::emitNor(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitNxor(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitNxor(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -123,7 +124,7 @@ void MmixLlvm::Private::emitNxor(VerticeContext& vctx, uint8_t xarg, uint8_t yar
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitMux(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitMux(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
@@ -136,7 +137,7 @@ void MmixLlvm::Private::emitMux(VerticeContext& vctx, uint8_t xarg, uint8_t yarg
 	EmitCond<Impl>::emit(vctx, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitSadd(VerticeContext& vctx, uint8_t xarg, uint8_t yarg, uint8_t zarg, bool immediate)
+void MmixLlvm::Private::emitSadd(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	LLVMContext& ctx = *vctx.Ctx;
 	IRBuilder<> builder(ctx);
