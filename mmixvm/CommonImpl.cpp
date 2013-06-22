@@ -131,7 +131,7 @@ Value* MmixLlvm::Private::emitQueryArithFlag(VerticeContext& vctx, IRBuilder<>& 
 }
 
 namespace {
-	void saveRegisters(VerticeContext& vctx, IRBuilder<>& builder, RegistersMap& regMap, RegistersMap& sregMap)
+	void saveRegisters(VerticeContext& vctx, IRBuilder<>& builder, RegistersMap& regMap, RegistersMap& sregMap, bool markClean)
 	{
 		LLVMContext& ctx = *vctx.Ctx;
 		Value *specialRegisters = vctx.Module->getGlobalVariable("SpecialRegisters");
@@ -144,6 +144,8 @@ namespace {
 					itr->second.value,
 					builder.CreatePointerCast(
 					builder.CreateGEP(specialRegisters, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
+				if (markClean)
+					itr->second.changed = false;
 			}
 		}
 		Value *registers = vctx.Module->getGlobalVariable("Registers");
@@ -156,15 +158,16 @@ namespace {
 					itr->second.value,
 					builder.CreatePointerCast(
 					builder.CreateGEP(registers, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
+				if (markClean)
+					itr->second.changed = false;
 			}
 		}
-
 	}
 
 	void emitLeaveVerticeImpl(VerticeContext& vctx, llvm::IRBuilder<>& builder,
 		RegistersMap& regMap, RegistersMap& sregMap, MXOcta target)
 	{
-		saveRegisters(vctx, builder, regMap, sregMap);
+		saveRegisters(vctx, builder, regMap, sregMap, false);
 		MmixLlvm::EdgeList& edgeList = *vctx.Edges;
 		edgeList.push_back(target);
 		Function::ArgumentListType::iterator argItr = vctx.Function->arg_begin();
@@ -177,13 +180,17 @@ namespace {
 		RegistersMap& regMap, RegistersMap& sregMap)
 	{
 		Value* trapVector = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rT);
-		saveRegisters(vctx, builder, regMap, sregMap);
+		saveRegisters(vctx, builder, regMap, sregMap, false);
 		Function::ArgumentListType::iterator argItr = vctx.Function->arg_begin();
 		builder.CreateStore(builder.getInt64(vctx.XPtr), argItr);
 		builder.CreateStore(trapVector, ++argItr);
 		builder.CreateRetVoid();
 	}
-};
+}
+
+void MmixLlvm::Private::flushRegistersCache(VerticeContext& vctx, llvm::IRBuilder<>& builder) {
+	saveRegisters(vctx, builder, vctx.RegMap, vctx.SpecialRegMap, true);
+}
 
 void MmixLlvm::Private::emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBuilder<>& builder,
 	llvm::Value* rY, llvm::Value* rZ, MXOcta target)

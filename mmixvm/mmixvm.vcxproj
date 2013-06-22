@@ -108,6 +108,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
+    <None Include="test\cycle.mmo" />
     <None Include="test\out.mmo" />
     <None Include="test\primes.mmo" />
   </ItemGroup>

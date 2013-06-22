@@ -33,8 +33,9 @@ namespace {
 		case MmixLlvm::JMP:
 		case MmixLlvm::JMPB:
 		case MmixLlvm::TRIP:
-		case MmixLlvm::TRAP:
 			return true;
+		case MmixLlvm::TRAP:
+			return instr == 0;
 		default:
 			return false;
 		}
@@ -624,7 +625,8 @@ namespace {
 	}
 };
 
-void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, MXOcta xPtr, Vertice& out)
+void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, 
+	MXOcta xPtr, Vertice& out)
 {
 	std::vector<std::string> twines;
 	MXOcta xPtr0 = xPtr;

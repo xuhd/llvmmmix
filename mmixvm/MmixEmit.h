@@ -17,5 +17,6 @@ namespace MmixLlvm {
 		llvm::Function* Function;
 	};
 
-	void emitSimpleVertice(llvm::LLVMContext& ctx, llvm::Module& m, MmixLlvm::MemAccessor& ma, MXOcta xPtr, Vertice& out);
+	void emitSimpleVertice(llvm::LLVMContext& ctx, llvm::Module& m, MmixLlvm::MemAccessor& ma,
+		MXOcta xPtr, Vertice& out);
 };

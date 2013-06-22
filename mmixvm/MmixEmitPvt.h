@@ -68,6 +68,10 @@ namespace MmixLlvm {
 		extern void emitLeaveVerticeViaTrap(VerticeContext& vctx, llvm::IRBuilder<>& builder,
 			llvm::Value* rY, llvm::Value* rZ);
 
+	//	extern void saveRegisters(VerticeContext& vctx, llvm::IRBuilder<>& builder, RegistersMap& regMap, RegistersMap& sregMap);
+
+		extern void flushRegistersCache(VerticeContext& vctx, llvm::IRBuilder<>& builder);
+
 		extern void emitLeaveVerticeViaJump(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXOcta target);
 
 		extern void emitLdo(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg);

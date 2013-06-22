@@ -15,6 +15,8 @@
 
 namespace MmixLlvm {
 	class MmixHwImpl: public Engine {
+		void* _handback[1];
+
 		std::vector<MXOcta> _registers;
 
 		std::vector<MXOcta> _spRegisters;
@@ -50,6 +52,8 @@ namespace MmixLlvm {
 		static void muluImpl(MXOcta arg1, MXOcta arg2, MXOcta* hiProd, MXOcta* loProd);
 
 		static void divuImpl(MXOcta hidivident, MXOcta lodivident, MXOcta divisor, MXOcta* quotient, MXOcta* remainder);
+
+		static MXOcta trapHandlerImpl(void* handback, MXOcta instr, MXOcta vector);
 
 		static MXOcta adjust64EndiannessImpl(MXOcta arg);
 	public:

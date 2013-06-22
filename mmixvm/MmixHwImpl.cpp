@@ -4,6 +4,7 @@
 
 using llvm::Module;
 using llvm::Type;
+using llvm::PointerType;
 using llvm::ArrayType;
 using llvm::FunctionType;
 using llvm::GlobalVariable;
@@ -82,6 +83,13 @@ void MmixHwImpl::postInit()
 		"AddressTranslateTable");
 	addressTranslateTableGlob->setAlignment(8);
 
+	GlobalVariable* thisRef = new GlobalVariable(*_module, 
+		Type::getInt32PtrTy(_lctx),
+		false,
+		GlobalValue::CommonLinkage,
+		0,
+		"ThisRef");
+
 	Type* params[5];
 	params[0] = Type::getInt64Ty(_lctx);
 	params[1] = Type::getInt64Ty(_lctx);
@@ -105,6 +113,13 @@ void MmixHwImpl::postInit()
 		FunctionType::get(Type::getInt64Ty(_lctx), ArrayRef<Type*>(params, params + 1), false), 
 		Function::ExternalLinkage, "Adjust64EndiannessImpl", _module);
 
+	params[0] = Type::getInt32PtrTy(_lctx);
+	params[1] = Type::getInt64Ty(_lctx);
+	params[2] = Type::getInt64Ty(_lctx);
+	llvm::Function* trapHandlerF = llvm::Function::Create(
+		FunctionType::get(Type::getInt64Ty(_lctx), ArrayRef<Type*>(params, params + 3), false), 
+		Function::ExternalLinkage, "TrapHandler", _module);
+
 	params[0] = Type::getInt32Ty(_lctx);
 	llvm::Function* debugInt32 = llvm::Function::Create(
 		FunctionType::get(Type::getVoidTy(_lctx), ArrayRef<Type*>(params, params + 1), false), 
@@ -122,10 +137,13 @@ void MmixHwImpl::postInit()
 	_ee->addGlobalMapping(adjust64EndiannessImplF, &MmixHwImpl::adjust64EndiannessImpl);
 	_ee->addGlobalMapping(debugInt32, &MmixHwImpl::debugInt32);
 	_ee->addGlobalMapping(debugInt64, &MmixHwImpl::debugInt64);
+	_ee->addGlobalMapping(trapHandlerF, &MmixHwImpl::trapHandlerImpl);
 	_ee->addGlobalMapping(registersGlob, &_registers[0]);
 	_ee->addGlobalMapping(specialRegistersGlob, &_spRegisters[0]);
 	_ee->addGlobalMapping(memGlob, &_memory[0]);
 	_ee->addGlobalMapping(addressTranslateTableGlob, &_att[0]);
+	_handback[0] = this;
+	_ee->addGlobalMapping(thisRef, &_handback[0]);
 }
 
 MXByte* MmixHwImpl::translateAddr(MXOcta addr, MXByte mask) {
@@ -182,6 +200,11 @@ MXOcta MmixHwImpl::adjust64EndiannessImpl(MXOcta arg) {
 	          | ((MXOcta)ref[6] << 8)  |  (MXOcta)ref[7];
 }
 
+MXOcta MmixHwImpl::trapHandlerImpl(void* handback, MXOcta instr, MXOcta vector) {
+	MmixHwImpl* this__ = static_cast<MmixHwImpl*>(handback);
+	return this__->_os->handleTrap(*this__, instr, vector);
+}
+
 boost::shared_ptr<MmixHwImpl> MmixHwImpl::create(const HardwareCfg& hwCfg, boost::shared_ptr<OS> os)
 {
 	boost::shared_ptr<MmixHwImpl> retVal(new MmixHwImpl(hwCfg, os));
@@ -196,6 +219,7 @@ void MmixHwImpl::run(MXOcta xref) {
 	args[0] = GenericValue(&instrAddr);
 	args[1] = GenericValue(&targetAddr);
 	_os->loadExecutable(*this);
+	MXByte* heap = &_memory[16384];
 	while(!_halted) {
 		VerticeMap::iterator itr = _vertices.find(xref0);
 		if (itr == _vertices.end()) {
@@ -211,7 +235,7 @@ void MmixHwImpl::run(MXOcta xref) {
 		if ((targetAddr & (1ull << 63)) == 0) {
 			xref0 = targetAddr;
 		} else {
-			_os->handleTrap(*this, targetAddr);
+			//_os->handleTrap(*this, targetAddr);
 			xref0 = _spRegisters[MmixLlvm::rWW];
 		}
 	}
