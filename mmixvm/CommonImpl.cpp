@@ -25,6 +25,8 @@ using MmixLlvm::MXByte;
 using MmixLlvm::MXTetra;
 using MmixLlvm::MXOcta;
 
+VerticeContext::~VerticeContext() { }
+
 namespace {
 	const MXTetra REGION_BIT_OFFSET = 61;
 	const MXOcta TWO_ENABLED_BITS = 3i64;
@@ -32,7 +34,7 @@ namespace {
 };
 
 Value* MmixLlvm::Private::emitAdjust64Endianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val) {
-	Function* f = vctx.Module->getFunction("Adjust64EndiannessImpl");
+	Function* f = vctx.getModule().getFunction("Adjust64EndiannessImpl");
 	Value* args[] = { val };
 	return builder.CreateCall(f, ArrayRef<Value*>(args, args + 1));
 }
@@ -57,188 +59,78 @@ Value* MmixLlvm::Private::emitAdjust16Endianness(VerticeContext& vctx, IRBuilder
 	return q1;
 }
 
-namespace {
-	Value* emitRegisterLoadImpl(VerticeContext& vctx, IRBuilder<>& builder, MXByte reg, bool cache) {
-		LLVMContext& ctx = *vctx.Ctx;
-		Value *regGlob = vctx.Module->getGlobalVariable("Registers");
-		Value* retVal;
-		RegistersMap::iterator itr = vctx.RegMap.find(reg);
-		if (itr == vctx.RegMap.end()) {
-			Value* ix[2];
-			ix[0] = builder.getInt32(0);
-			ix[1] = builder.getInt32(reg);
-			retVal = builder.CreateLoad(
-				builder.CreatePointerCast(
-				builder.CreateGEP(regGlob, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)), false, Twine("reg")+Twine(reg));
-			if (cache)
-				addRegisterToCache(vctx, reg, retVal, false);
-		} else {
-			retVal = itr->second.value;
-		}
-		return retVal;
-	}
-
-	Value* emitSpecialRegisterLoadImpl(VerticeContext& vctx, IRBuilder<>& builder, MmixLlvm::SpecialReg sreg, bool cache) {
-		LLVMContext& ctx = *vctx.Ctx;
-		Value *regGlob = vctx.Module->getGlobalVariable("SpecialRegisters");
-		Value* retVal;
-		RegistersMap::iterator itr = vctx.SpecialRegMap.find(sreg);
-		if (itr == vctx.SpecialRegMap.end()) {
-			Value* ix[2];
-			ix[0] = builder.getInt32(0);
-			ix[1] = builder.getInt32(sreg);
-			retVal = builder.CreateLoad(
-				builder.CreatePointerCast(
-				builder.CreateGEP(regGlob, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)), false, Twine("sreg")+Twine(sreg));
-			if (cache) {
-				RegisterRecord r0;
-				r0.value = retVal;
-				r0.changed = false;
-				vctx.SpecialRegMap[sreg] = r0;
-			}
-		} else {
-			retVal = itr->second.value;
-		}
-		return retVal;
-	}
-};
-
-void MmixLlvm::Private::addRegisterToCache(VerticeContext& vctx, MXByte reg, Value* val, bool markDirty) {
-	RegisterRecord r0;
-	r0.value = val;
-	r0.changed = markDirty;
-	vctx.RegMap[reg] = r0;
-}
-
-void MmixLlvm::Private::addSpecialRegisterToCache(VerticeContext& vctx, MXByte reg, Value* val, bool markDirty) {
-	RegisterRecord r0;
-	r0.value = val;
-	r0.changed = markDirty;
-	vctx.SpecialRegMap[reg] = r0;
-}
-
-Value* MmixLlvm::Private::emitRegisterLoad(VerticeContext& vctx, IRBuilder<>& builder, MXByte reg) {
-	return emitRegisterLoadImpl(vctx, builder, reg, true);
-}
-
-Value* MmixLlvm::Private::emitSpecialRegisterLoad(VerticeContext& vctx, IRBuilder<>& builder, MmixLlvm::SpecialReg sreg) {
-	return emitSpecialRegisterLoadImpl(vctx, builder, sreg, true);
-}
-
 Value* MmixLlvm::Private::emitQueryArithFlag(VerticeContext& vctx, IRBuilder<>& builder, MmixLlvm::ArithFlag flag) {
-	Value* ra = emitSpecialRegisterLoad(vctx, builder, rA);
+	Value* ra = vctx.getSpRegister(rA);
 	return builder.CreateICmpNE(builder.CreateAnd(ra, builder.getInt64(flag)), builder.getInt64(0)); 
 }
 
 namespace {
-	void saveRegisters(VerticeContext& vctx, IRBuilder<>& builder, RegistersMap& regMap, RegistersMap& sregMap, bool markClean)
+	void saveRegisters(VerticeContext& vctx, IRBuilder<>& builder)
 	{
-		LLVMContext& ctx = *vctx.Ctx;
-		Value *specialRegisters = vctx.Module->getGlobalVariable("SpecialRegisters");
-		for (RegistersMap::iterator itr = sregMap.begin(); itr != sregMap.end(); ++itr) {
-			if (itr->second.changed) {
-				Value* ix[2];
-				ix[0] = builder.getInt32(0);
-				ix[1] = builder.getInt32(itr->first);
-				builder.CreateStore(
-					itr->second.value,
-					builder.CreatePointerCast(
-					builder.CreateGEP(specialRegisters, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
-				if (markClean)
-					itr->second.changed = false;
-			}
-		}
-		Value *registers = vctx.Module->getGlobalVariable("Registers");
-		for (RegistersMap::iterator itr = regMap.begin(); itr != regMap.end(); ++itr) {
-			if (itr->second.changed) {
-				Value* ix[2];
-				ix[0] = builder.getInt32(0);
-				ix[1] = builder.getInt32(itr->first);
-				builder.CreateStore(
-					itr->second.value,
-					builder.CreatePointerCast(
+		LLVMContext& ctx = vctx.getLctx();
+		Value *registers = vctx.getModule().getGlobalVariable("Registers");
+		Value *specialRegisters = vctx.getModule().getGlobalVariable("SpecialRegisters");
+		std::vector<MXByte> dirtyRegs(vctx.getDirtyRegisters());
+		for (std::vector<MXByte>::iterator itr = dirtyRegs.begin();
+			 itr != dirtyRegs.end();
+			 ++itr)
+		{
+			Value* ix[2];
+			ix[0] = builder.getInt32(0);
+			ix[1] = builder.getInt32(*itr);
+			builder.CreateStore(
+				vctx.getRegister(*itr),
+				builder.CreatePointerCast(
 					builder.CreateGEP(registers, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
-				if (markClean)
-					itr->second.changed = false;
-			}
 		}
-	}
-
-	void emitLeaveVerticeImpl(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-		RegistersMap& regMap, RegistersMap& sregMap, MXOcta target)
-	{
-		saveRegisters(vctx, builder, regMap, sregMap, false);
-		MmixLlvm::EdgeList& edgeList = *vctx.Edges;
-		edgeList.push_back(target);
-		Function::ArgumentListType::iterator argItr = vctx.Function->arg_begin();
-		builder.CreateStore(builder.getInt64(vctx.XPtr), argItr);
-		builder.CreateStore(builder.getInt64(target), ++argItr);
-		builder.CreateRetVoid();
-	}
-
-	void emitLeaveVerticeViaTrapImpl(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-		RegistersMap& regMap, RegistersMap& sregMap)
-	{
-		Value* trapVector = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rT);
-		saveRegisters(vctx, builder, regMap, sregMap, false);
-		Function::ArgumentListType::iterator argItr = vctx.Function->arg_begin();
-		builder.CreateStore(builder.getInt64(vctx.XPtr), argItr);
-		builder.CreateStore(trapVector, ++argItr);
-		builder.CreateRetVoid();
+		std::vector<MmixLlvm::SpecialReg> dirtySRegs(vctx.getDirtySpRegisters());
+		for (std::vector<MmixLlvm::SpecialReg>::iterator itr = dirtySRegs.begin();
+			 itr != dirtySRegs.end();
+			++itr)
+		{
+			Value* ix[2];
+			ix[0] = builder.getInt32(0);
+			ix[1] = builder.getInt32(*itr);
+			builder.CreateStore(
+				vctx.getSpRegister(*itr),
+				builder.CreatePointerCast(
+					builder.CreateGEP(specialRegisters, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
+		}
 	}
 }
 
 void MmixLlvm::Private::flushRegistersCache(VerticeContext& vctx, llvm::IRBuilder<>& builder) {
-	saveRegisters(vctx, builder, vctx.RegMap, vctx.SpecialRegMap, true);
+	saveRegisters(vctx, builder);
+	vctx.markAllClean();
 }
 
 void MmixLlvm::Private::emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBuilder<>& builder,
 	llvm::Value* rY, llvm::Value* rZ, MXOcta target)
 {
-	RegistersMap regMap(vctx.RegMap);
-	RegistersMap sregMap(vctx.SpecialRegMap);
-	RegisterRecord r0;
-	r0.changed = true;
-	r0.value = builder.getInt64(vctx.XPtr + 4);
-	sregMap[MmixLlvm::rW] = r0;
-	r0.value = emitRegisterLoadImpl(vctx, builder, 255, false);
-	sregMap[MmixLlvm::rB] = r0;
-	r0.value = emitSpecialRegisterLoadImpl(vctx, builder, MmixLlvm::rJ, false);
-	regMap[255] = r0;
-	r0.value = builder.CreateOr(builder.CreateShl(builder.getInt64(1), 63), builder.getInt64(vctx.Instr));
-	sregMap[MmixLlvm::rX] = r0;
-	r0.value = rY;
-	sregMap[MmixLlvm::rY] = r0;
-	r0.value = rZ;
-	sregMap[MmixLlvm::rZ] = r0;
-	emitLeaveVerticeImpl(vctx, builder, regMap, sregMap, target);
-}
-
-void MmixLlvm::Private::emitLeaveVerticeViaTrap(VerticeContext& vctx, IRBuilder<>& builder,
-	Value* rY, Value* rZ)
-{
-	RegistersMap regMap(vctx.RegMap);
-	RegistersMap sregMap(vctx.SpecialRegMap);
-	RegisterRecord r0;
-	r0.changed = true;
-	r0.value = builder.getInt64(vctx.XPtr + 4);
-	sregMap[MmixLlvm::rWW] = r0;
-	r0.value = emitRegisterLoadImpl(vctx, builder, 255, false);
-	sregMap[MmixLlvm::rBB] = r0;
-	r0.value = emitSpecialRegisterLoadImpl(vctx, builder, MmixLlvm::rJ, false);
-	regMap[255] = r0;
-	r0.value = builder.CreateOr(builder.CreateShl(builder.getInt64(1), 63), builder.getInt64(vctx.Instr));
-	sregMap[MmixLlvm::rXX] = r0;
-	r0.value = rY;
-	sregMap[MmixLlvm::rYY] = r0;
-	r0.value = rZ;
-	sregMap[MmixLlvm::rZZ] = r0;
-	emitLeaveVerticeViaTrapImpl(vctx, builder, regMap, sregMap);
+	boost::shared_ptr<VerticeContext> branch(vctx.makeBranch());
+	branch->assignSpRegister(MmixLlvm::rW, builder.getInt64(branch->getXPtr() + 4));
+	Value* r255 = branch->getRegister(255);
+	branch->assignSpRegister(MmixLlvm::rB, r255);
+	Value* rJ = branch->getSpRegister(MmixLlvm::rJ);
+	branch->assignRegister(255, rJ);
+	branch->assignSpRegister(MmixLlvm::rX, 
+		builder.CreateOr(builder.CreateShl(builder.getInt64(1), 63), builder.getInt64(branch->getInstr())));
+	branch->assignSpRegister(MmixLlvm::rY, rY);
+	branch->assignSpRegister(MmixLlvm::rZ, rZ);
+	saveRegisters(*branch, builder);
+	Function::ArgumentListType::iterator argItr = branch->getFunction().arg_begin();
+	builder.CreateStore(builder.getInt64(branch->getXPtr()), argItr);
+	builder.CreateStore(builder.getInt64(target), ++argItr);
+	builder.CreateRetVoid();
 }
 
 void MmixLlvm::Private::emitLeaveVerticeViaJump(VerticeContext& vctx, IRBuilder<>& builder, MXOcta target) 
 {
-	emitLeaveVerticeImpl(vctx, builder, vctx.RegMap, vctx.SpecialRegMap, target);
+	saveRegisters(vctx, builder);
+	Function::ArgumentListType::iterator argItr = vctx.getFunction().arg_begin();
+	builder.CreateStore(builder.getInt64(vctx.getXPtr()), argItr);
+	builder.CreateStore(builder.getInt64(target), ++argItr);
+	builder.CreateRetVoid();
 }
 
 Value* MmixLlvm::Private::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
@@ -306,5 +198,5 @@ MXOcta MmixLlvm::Private::getArithTripVector(MmixLlvm::ArithFlag flag) {
 
 void MmixLlvm::Private::debugInt64(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* val) {
 	Value* callParams[] = { val };
-	builder.CreateCall(vctx.Module->getFunction("DebugInt64"), ArrayRef<Value*>(callParams, callParams + 1));
+	builder.CreateCall(vctx.getModule().getFunction("DebugInt64"), ArrayRef<Value*>(callParams, callParams + 1));
 }

@@ -33,14 +33,14 @@ namespace {
 		template<class BitOp> void EmitCond<BitOp>::emit(VerticeContext& vctx, 
 			MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 		{
-			LLVMContext& ctx = *vctx.Ctx;
-			IRBuilder<> builder(ctx);
-			builder.SetInsertPoint(vctx.Entry);
-			Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
-			Value* zarg0 =  immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+			
+			IRBuilder<> builder(vctx.getLctx());
+			builder.SetInsertPoint(vctx.getOCEntry());
+			Value* yarg0 = vctx.getRegister( yarg);
+			Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 			Value* result = typename BitOp::emitBitOp(vctx, builder, yarg0, zarg0);
-			builder.CreateBr(vctx.Exit);
-			addRegisterToCache(vctx, xarg, result, true);
+			vctx.assignRegister(xarg, result);
+			builder.CreateBr(vctx.getOCExit());
 		}
 };
 
@@ -128,7 +128,7 @@ void MmixLlvm::Private::emitMux(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 {
 	struct Impl {
 		static Value* emitBitOp(VerticeContext& vctx, IRBuilder<>& builder, Value* yarg, Value* zarg) {
-			Value* mreg = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rM);
+			Value* mreg = vctx.getSpRegister(MmixLlvm::rM);
 			Value* l = builder.CreateAnd(yarg, mreg);
 			Value* r = builder.CreateAnd(zarg, builder.CreateNot(mreg));
 			return builder.CreateOr(l, r);
@@ -139,24 +139,24 @@ void MmixLlvm::Private::emitMux(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 
 void MmixLlvm::Private::emitSadd(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
-	LLVMContext& ctx = *vctx.Ctx;
+	LLVMContext& ctx = vctx.getLctx();	
 	IRBuilder<> builder(ctx);
-	builder.SetInsertPoint(vctx.Entry);
-	BasicBlock *loopEntry = BasicBlock::Create(ctx, genUniq("loop_entry"), vctx.Function);
-	BasicBlock *loop = BasicBlock::Create(ctx, genUniq("loop"), vctx.Function);
-	Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
-	Value* zarg0 =  immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+	builder.SetInsertPoint(vctx.getOCEntry());
+	BasicBlock *loopEntry = BasicBlock::Create(ctx, genUniq("loop_entry"), &vctx.getFunction());
+	BasicBlock *loop = BasicBlock::Create(ctx, genUniq("loop"), &vctx.getFunction());
+	Value* yarg0 = vctx.getRegister( yarg);
+	Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 	Value* arg0 = builder.CreateAnd(yarg0, builder.CreateNot(zarg0));
 	builder.CreateBr(loopEntry);
 	builder.SetInsertPoint(loopEntry);
 	PHINode* counter = builder.CreatePHI(Type::getInt32Ty(ctx), 0);
-	counter->addIncoming(builder.getInt32(0), vctx.Entry);
+	counter->addIncoming(builder.getInt32(0), vctx.getOCEntry());
 	PHINode* var = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
-	var->addIncoming(arg0, vctx.Entry);
+	var->addIncoming(arg0, vctx.getOCEntry());
 	PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
-	result->addIncoming(builder.getInt64(0), vctx.Entry);
+	result->addIncoming(builder.getInt64(0), vctx.getOCEntry());
 	Value* cond = builder.CreateICmpULT(counter, builder.getInt32(64));
-	builder.CreateCondBr(cond, loop, vctx.Exit);
+	builder.CreateCondBr(cond, loop, vctx.getOCExit());
 	builder.SetInsertPoint(loop);
 	Value* nextResult = builder.CreateAdd(result, builder.CreateAnd(var, builder.getInt64(1)));
 	Value* nextCounter = builder.CreateAdd(counter, builder.getInt32(1));
@@ -164,6 +164,6 @@ void MmixLlvm::Private::emitSadd(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 	counter->addIncoming(nextCounter, loop);
 	var->addIncoming(nextVar, loop);
 	result->addIncoming(nextResult, loop);
+	vctx.assignRegister(xarg, result);
 	builder.CreateBr(loopEntry);
-	addRegisterToCache(vctx, xarg, result, true);
 }

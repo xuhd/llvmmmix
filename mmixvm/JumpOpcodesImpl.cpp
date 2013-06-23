@@ -32,35 +32,35 @@ namespace {
 	template<class Cond> void EmitBranch<Cond>::emit(VerticeContext& vctx,
 		MXByte xarg, MXTetra yzarg, bool backward)
 	{
-		LLVMContext& ctx = *vctx.Ctx;
+		LLVMContext& ctx = vctx.getLctx();
 		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(vctx.Entry);
-		BasicBlock *condTrueBlock = BasicBlock::Create(ctx, genUniq("cond_true"), vctx.Function);
-		BasicBlock *condFalseBlock = BasicBlock::Create(ctx, genUniq("cond_false"), vctx.Function);
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
-		Value* xarg0 = emitRegisterLoad(vctx, builder, xarg);
+		builder.SetInsertPoint(vctx.getOCEntry());
+		BasicBlock *condTrueBlock = BasicBlock::Create(ctx, genUniq("cond_true"), &vctx.getFunction());
+		//BasicBlock *condFalseBlock = BasicBlock::Create(ctx, genUniq("cond_false"), &vctx.getFunction());
+		//BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), &vctx.getFunction());
+		Value* xarg0 = vctx.getRegister( xarg);
 		Value* cond0 = typename Cond::emitCond(builder, xarg0);
-		builder.CreateCondBr(cond0, condTrueBlock, vctx.Exit);
+		builder.CreateCondBr(cond0, condTrueBlock, vctx.getOCExit());
 		builder.SetInsertPoint(condTrueBlock);
 		MXOcta target;
 		if (!backward)
-			target = vctx.XPtr + (yzarg << 2);
+			target = vctx.getXPtr() + (yzarg << 2);
 		else 
-			target = vctx.XPtr - (yzarg << 2);
+			target = vctx.getXPtr() - (yzarg << 2);
 		emitLeaveVerticeViaJump(vctx, builder, target);
 	}
 };
 
 
 void MmixLlvm::Private::emitJmp(VerticeContext& vctx, MXTetra xyzarg, bool backward) {
-	LLVMContext& ctx = *vctx.Ctx;
-	IRBuilder<> builder(ctx);
-	builder.SetInsertPoint(vctx.Entry);
+	
+	IRBuilder<> builder(vctx.getLctx());
+	builder.SetInsertPoint(vctx.getOCEntry());
 	MXOcta target;
 	if (!backward)
-		target = vctx.XPtr + (xyzarg << 2);
+		target = vctx.getXPtr() + (xyzarg << 2);
 	else 
-		target = vctx.XPtr - (xyzarg << 2);
+		target = vctx.getXPtr() - (xyzarg << 2);
 	emitLeaveVerticeViaJump(vctx, builder, target);
 }
 

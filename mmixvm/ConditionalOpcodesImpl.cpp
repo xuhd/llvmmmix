@@ -31,14 +31,13 @@ namespace {
 		template<class Cond> void EmitCond<Cond>::emit(VerticeContext& vctx, 
 			MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 		{
-			LLVMContext& ctx = *vctx.Ctx;
-			IRBuilder<> builder(ctx);
-			builder.SetInsertPoint(vctx.Entry);
-			BasicBlock *condTrueBlock = BasicBlock::Create(ctx, genUniq("cond_true"), vctx.Function);
-			BasicBlock *condFalseBlock = BasicBlock::Create(ctx, genUniq("cond_false"), vctx.Function);
-			BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
-			Value* yarg0 = emitRegisterLoad(vctx, builder, yarg);
-			Value* zarg0 =  immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
+			IRBuilder<> builder(vctx.getLctx());
+			builder.SetInsertPoint(vctx.getOCEntry());
+			BasicBlock *condTrueBlock = BasicBlock::Create(vctx.getLctx(), genUniq("cond_true"), &vctx.getFunction());
+			BasicBlock *condFalseBlock = BasicBlock::Create(vctx.getLctx(), genUniq("cond_false"), &vctx.getFunction());
+			BasicBlock *epilogue = BasicBlock::Create(vctx.getLctx(), genUniq("epilogue"), &vctx.getFunction());
+			Value* yarg0 = vctx.getRegister( yarg);
+			Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 			Value* cond0 = typename Cond::emitCond(builder, yarg0);
 			builder.CreateCondBr(cond0, condTrueBlock, condFalseBlock);
 			builder.SetInsertPoint(condTrueBlock);
@@ -47,11 +46,11 @@ namespace {
 			Value* defXval = typename Cond::emitDefXVal(vctx, builder, xarg);
 			builder.CreateBr(epilogue);
 			builder.SetInsertPoint(epilogue);
-			PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+			PHINode* result = builder.CreatePHI(Type::getInt64Ty(vctx.getLctx()), 0);
 			result->addIncoming(zarg0, condTrueBlock);
 			result->addIncoming(defXval, condFalseBlock);
-			builder.CreateBr(vctx.Exit);
-			addRegisterToCache(vctx, xarg, result, true);
+			builder.CreateBr(vctx.getOCExit());
+			vctx.assignRegister(xarg, result);
 		}
 };
 
@@ -63,7 +62,7 @@ void MmixLlvm::Private::emitCsn(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return emitRegisterLoad(vctx, builder, xarg);
+			return vctx.getRegister( xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -77,7 +76,7 @@ void MmixLlvm::Private::emitCsz(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return emitRegisterLoad(vctx, builder, xarg);
+			return vctx.getRegister( xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -91,7 +90,7 @@ void MmixLlvm::Private::emitCsp(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return emitRegisterLoad(vctx, builder, xarg);
+			return vctx.getRegister( xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -105,7 +104,7 @@ void MmixLlvm::Private::emitCsod(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return emitRegisterLoad(vctx, builder, xarg);
+			return vctx.getRegister( xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -119,7 +118,7 @@ void MmixLlvm::Private::emitCsnn(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return emitRegisterLoad(vctx, builder, xarg);
+			return vctx.getRegister( xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -133,7 +132,7 @@ void MmixLlvm::Private::emitCsnz(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return emitRegisterLoad(vctx, builder, xarg);
+			return vctx.getRegister( xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -147,7 +146,7 @@ void MmixLlvm::Private::emitCsnp(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return emitRegisterLoad(vctx, builder, xarg);
+			return vctx.getRegister( xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
@@ -161,7 +160,7 @@ void MmixLlvm::Private::emitCsev(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return emitRegisterLoad(vctx, builder, xarg);
+			return vctx.getRegister( xarg);
 		}
 	};
 	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);

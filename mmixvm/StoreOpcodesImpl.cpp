@@ -44,25 +44,24 @@ namespace {
 
 	template<int Pow2> void EmitS<Pow2>::emit(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
-		LLVMContext& ctx = *vctx.Ctx;
-		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(vctx.Entry);
-		Value* xVal = emitRegisterLoad(vctx, builder, xarg);
+		IRBuilder<> builder(vctx.getLctx());
+		builder.SetInsertPoint(vctx.getOCEntry());
+		Value* xVal = vctx.getRegister( xarg);
 		Value* loBoundCk = builder.CreateICmpSGE(xVal, builder.getInt64(LoBound));
 		Value* hiBoundCk = builder.CreateICmpSLE(xVal, builder.getInt64(HiBound));
-		BasicBlock *success = BasicBlock::Create(ctx, genUniq("success"), vctx.Function);
-		BasicBlock *overflow = BasicBlock::Create(ctx, genUniq("overflow"), vctx.Function);
-		BasicBlock *setOverflowFlag = BasicBlock::Create(ctx, genUniq("set_overflow_flag"), vctx.Function);
-		BasicBlock *exitViaOverflowTrip = BasicBlock::Create(ctx, genUniq("exit_via_overflow_trip"), vctx.Function);
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), vctx.Function);
-		Value* initRaVal = emitSpecialRegisterLoad(vctx, builder, MmixLlvm::rA);
-		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
-		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
-		Value* theA = makeA(ctx, builder, yVal, zVal);
+		BasicBlock *success = BasicBlock::Create(vctx.getLctx(), genUniq("success"), &vctx.getFunction());
+		BasicBlock *overflow = BasicBlock::Create(vctx.getLctx(), genUniq("overflow"), &vctx.getFunction());
+		BasicBlock *setOverflowFlag = BasicBlock::Create(vctx.getLctx(), genUniq("set_overflow_flag"), &vctx.getFunction());
+		BasicBlock *exitViaOverflowTrip = BasicBlock::Create(vctx.getLctx(), genUniq("exit_via_overflow_trip"), &vctx.getFunction());
+		BasicBlock *epilogue = BasicBlock::Create(vctx.getLctx(), genUniq("epilogue"), &vctx.getFunction());
+		Value* initRaVal = vctx.getSpRegister(MmixLlvm::rA);
+		Value* yVal = vctx.getRegister( yarg);
+		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
+		Value* theA = makeA(vctx.getLctx(), builder, yVal, zVal);
 		builder.CreateCondBr(builder.CreateAnd(loBoundCk, hiBoundCk), success, overflow);
 		builder.SetInsertPoint(success);
-		Value* valToStore = createStoreCast(ctx, builder, xVal, true);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(vctx, builder, valToStore));
+		Value* valToStore = createStoreCast(vctx.getLctx(), builder, xVal, true);
+		emitStoreMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(overflow);
 		Value* overflowAlreadySet = 
@@ -76,53 +75,51 @@ namespace {
 		builder.SetInsertPoint(exitViaOverflowTrip);
 		emitLeaveVerticeViaTrip(vctx, builder, theA, xVal, getArithTripVector(MmixLlvm::V));
 		builder.SetInsertPoint(epilogue);
-		PHINode* ra = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
+		PHINode* ra = builder.CreatePHI(Type::getInt64Ty(vctx.getLctx()), 0);
 		ra->addIncoming(initRaVal, success);
 		ra->addIncoming(overflowRaVal, setOverflowFlag);
-		builder.CreateBr(vctx.Exit);
-		addSpecialRegisterToCache(vctx, MmixLlvm::rA, ra, true);
+		vctx.assignSpRegister(MmixLlvm::rA, ra);
+		builder.CreateBr(vctx.getOCExit());
+		//addSpecialRegisterToCache(vctx, MmixLlvm::rA, ra, true);
 	}
 
 	template<int Pow2> void EmitS<Pow2>::emitu(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
-		LLVMContext& ctx = *vctx.Ctx;
-		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(vctx.Entry);
-		Value* xVal = emitRegisterLoad(vctx, builder, xarg);
-		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
-		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
-		Value* theA = makeA(ctx, builder, yVal, zVal);
-		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(vctx, builder, valToStore));
-		builder.CreateBr(vctx.Exit);
+		IRBuilder<> builder(vctx.getLctx());
+		builder.SetInsertPoint(vctx.getOCEntry());
+		Value* xVal = vctx.getRegister( xarg);
+		Value* yVal = vctx.getRegister( yarg);
+		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
+		Value* theA = makeA(vctx.getLctx(), builder, yVal, zVal);
+		Value* valToStore = createStoreCast(vctx.getLctx(), builder, xVal, false);
+		emitStoreMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, adjustEndianness(vctx, builder, valToStore));
+		builder.CreateBr(vctx.getOCExit());
 	}
 
 	template<> void EmitS<2>::emitht(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
-		LLVMContext& ctx = *vctx.Ctx;
-		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(vctx.Entry);
-		Value* xVal = emitRegisterLoad(vctx, builder, xarg);
-		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
-		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
-		Value* theA = makeA(ctx, builder, yVal, zVal);
-		Value* valToStore = createStoreCast(ctx, builder, builder.CreateLShr(xVal, builder.getInt64(32)), false);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(vctx, builder, valToStore));
-		builder.CreateBr(vctx.Exit);
+		IRBuilder<> builder(vctx.getLctx());
+		builder.SetInsertPoint(vctx.getOCEntry());
+		Value* xVal = vctx.getRegister( xarg);
+		Value* yVal = vctx.getRegister( yarg);
+		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
+		Value* theA = makeA(vctx.getLctx(), builder, yVal, zVal);
+		Value* valToStore = createStoreCast(vctx.getLctx(), builder, builder.CreateLShr(xVal, builder.getInt64(32)), false);
+		emitStoreMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, adjustEndianness(vctx, builder, valToStore));
+		builder.CreateBr(vctx.getOCExit());
 	}
 
 	template<> void EmitS<3>::emitco(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 	{
-		LLVMContext& ctx = *vctx.Ctx;
-		IRBuilder<> builder(ctx);
-		builder.SetInsertPoint(vctx.Entry);
+		IRBuilder<> builder(vctx.getLctx());
+		builder.SetInsertPoint(vctx.getOCEntry());
 		Value* xVal = builder.getInt64(xarg);
-		Value* yVal = emitRegisterLoad(vctx, builder, yarg);
-		Value* zVal = immediate ? builder.getInt64(zarg) : emitRegisterLoad(vctx, builder, zarg);
-		Value* theA = makeA(ctx, builder, yVal, zVal);
-		Value* valToStore = createStoreCast(ctx, builder, xVal, false);
-		emitStoreMem(ctx, *vctx.Module, *vctx.Function, builder, theA, adjustEndianness(vctx, builder, valToStore));
-		builder.CreateBr(vctx.Exit);
+		Value* yVal = vctx.getRegister( yarg);
+		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
+		Value* theA = makeA(vctx.getLctx(), builder, yVal, zVal);
+		Value* valToStore = createStoreCast(vctx.getLctx(), builder, xVal, false);
+		emitStoreMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, adjustEndianness(vctx, builder, valToStore));
+		builder.CreateBr(vctx.getOCExit());
 	}
 
 	template<> Value* EmitS<0>::makeA(LLVMContext& ctx, IRBuilder<>& builder, Value* yVal, Value* zVal)
