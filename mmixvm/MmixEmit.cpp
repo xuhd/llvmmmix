@@ -295,7 +295,7 @@ namespace {
 		}
 	}
 
-	void emitInstruction(VerticeContext& vctx)
+	void emitInstruction(VerticeContext& vctx, IRBuilder<>& builder)
 	{
 		MXTetra instr = vctx.getInstr();
 		MXByte o0 = (MXByte) (instr >> 24);
@@ -304,565 +304,577 @@ namespace {
 		MXByte zarg = (MXByte) (instr & 0xff);
 		switch(o0) {
 		case MmixLlvm::LDO:
-			emitLdo(vctx, xarg, yarg, zarg);
+			emitLdo(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDOI:
-			emitLdoi(vctx, xarg, yarg, zarg);
+			emitLdoi(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDT:
-			emitLdt(vctx, xarg, yarg, zarg, true);
+			emitLdt(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDTI:
-			emitLdti(vctx, xarg, yarg, zarg, true);
+			emitLdti(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDW:
-			emitLdw(vctx, xarg, yarg, zarg, true);
+			emitLdw(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDWI:
-			emitLdwi(vctx, xarg, yarg, zarg, true);
+			emitLdwi(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDB:
-			emitLdb(vctx, xarg, yarg, zarg, true);
+			emitLdb(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDBI:
-			emitLdbi(vctx, xarg, yarg, zarg, true);
+			emitLdbi(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::LDOU:
-			emitLdo(vctx, xarg, yarg, zarg);
+			emitLdo(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDOUI:
-			emitLdoi(vctx, xarg, yarg, zarg);
+			emitLdoi(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDTU:
-			emitLdt(vctx, xarg, yarg, zarg, false);
+			emitLdt(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDTUI:
-			emitLdti(vctx, xarg, yarg, zarg, false);
+			emitLdti(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDWU:
-			emitLdw(vctx, xarg, yarg, zarg, false);
+			emitLdw(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDWUI:
-			emitLdwi(vctx, xarg, yarg, zarg, false);
+			emitLdwi(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDBU:
-			emitLdb(vctx, xarg, yarg, zarg, false);
+			emitLdb(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDBUI:
-			emitLdbi(vctx, xarg, yarg, zarg, false);
+			emitLdbi(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::LDHT:
-			emitLdht(vctx, xarg, yarg, zarg);
+			emitLdht(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::LDHTI:
-			emitLdhti(vctx, xarg, yarg, zarg);
+			emitLdhti(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::GET:
-			emitGet(vctx, xarg, zarg);
+			emitGet(vctx, builder, xarg, zarg);
 			break;
 		case MmixLlvm::PUT:
-			emitPut(vctx, xarg, zarg, false);
+			emitPut(vctx, builder, xarg, zarg, false);
 			break;
 		case MmixLlvm::PUTI:
-			emitPut(vctx, xarg, zarg, true);
+			emitPut(vctx, builder, xarg, zarg, true);
 			break;
 		case MmixLlvm::STO:
-			emitSto(vctx, xarg, yarg, zarg);
+			emitSto(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STOI:
-			emitStoi(vctx, xarg, yarg, zarg);
+			emitStoi(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STT:
-			emitStt(vctx, xarg, yarg, zarg);
+			emitStt(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STTI:
-			emitStti(vctx, xarg, yarg, zarg);
+			emitStti(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STW:
-			emitStw(vctx, xarg, yarg, zarg);
+			emitStw(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STWI:
-			emitStwi(vctx, xarg, yarg, zarg);
+			emitStwi(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STB:
-			emitStb(vctx, xarg, yarg, zarg);
+			emitStb(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STBI:
-			emitStbi(vctx, xarg, yarg, zarg);
+			emitStbi(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STOU:
-			emitSto(vctx, xarg, yarg, zarg);
+			emitSto(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STTU:
-			emitSttu(vctx, xarg, yarg, zarg);
+			emitSttu(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STWU:
-			emitStwu(vctx, xarg, yarg, zarg);
+			emitStwu(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STBU:
-			emitStbu(vctx, xarg, yarg, zarg);
+			emitStbu(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STOUI:
-			emitStoi(vctx, xarg, yarg, zarg);
+			emitStoi(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STTUI:
-			emitSttui(vctx, xarg, yarg, zarg);
+			emitSttui(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STWUI:
-			emitStwui(vctx, xarg, yarg, zarg);
+			emitStwui(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STBUI:
-			emitStbui(vctx, xarg, yarg, zarg);
+			emitStbui(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STHT:
-			emitStht(vctx, xarg, yarg, zarg);
+			emitStht(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STHTI:
-			emitSthti(vctx, xarg, yarg, zarg);
+			emitSthti(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STCO:
-			emitStco(vctx, xarg, yarg, zarg);
+			emitStco(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::STCOI:
-			emitStcoi(vctx, xarg, yarg, zarg);
+			emitStcoi(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::ADD:
-			emitAdd(vctx, xarg, yarg, zarg, false);
+			emitAdd(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ADDI:
-			emitAdd(vctx, xarg, yarg, zarg, true);
+			emitAdd(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ADDU:
-			emitAddu(vctx, xarg, yarg, zarg, false);
+			emitAddu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ADDUI:
-			emitAddu(vctx, xarg, yarg, zarg, true);
+			emitAddu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::_2ADDU:
-			emit2Addu(vctx, xarg, yarg, zarg, false);
+			emit2Addu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::_2ADDUI:
-			emit2Addu(vctx, xarg, yarg, zarg, true);
+			emit2Addu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::_4ADDU:
-			emit4Addu(vctx, xarg, yarg, zarg, false);
+			emit4Addu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::_4ADDUI:
-			emit4Addu(vctx, xarg, yarg, zarg, true);
+			emit4Addu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::_8ADDU:
-			emit8Addu(vctx, xarg, yarg, zarg, false);
+			emit8Addu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::_8ADDUI:
-			emit8Addu(vctx, xarg, yarg, zarg, true);
+			emit8Addu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::_16ADDU:
-			emit16Addu(vctx, xarg, yarg, zarg, false);
+			emit16Addu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::_16ADDUI:
-			emit16Addu(vctx, xarg, yarg, zarg, true);
+			emit16Addu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SUB:
-			emitSub(vctx, xarg, yarg, zarg, false);
+			emitSub(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::SUBI:
-			emitSub(vctx, xarg, yarg, zarg, true);
+			emitSub(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SUBU:
-			emitSubu(vctx, xarg, yarg, zarg, false);
+			emitSubu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::SUBUI:
-			emitSubu(vctx, xarg, yarg, zarg, true);
+			emitSubu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::MUL:
-			emitMul(vctx, xarg, yarg, zarg, false);
+			emitMul(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::MULI:
-			emitMul(vctx, xarg, yarg, zarg, true);
+			emitMul(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::DIV:
-			emitDiv(vctx, xarg, yarg, zarg, false);
+			emitDiv(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::DIVI:
-			emitDiv(vctx, xarg, yarg, zarg, true);
+			emitDiv(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::MULU:
-			emitMulu(vctx, xarg, yarg, zarg, false);
+			emitMulu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::MULUI:
-			emitMulu(vctx, xarg, yarg, zarg, true);
+			emitMulu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::DIVU:
-			emitDivu(vctx, xarg, yarg, zarg, false);
+			emitDivu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::DIVUI:
-			emitDivu(vctx, xarg, yarg, zarg, true);
+			emitDivu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::NEG:
-			emitNeg(vctx, xarg, yarg, zarg, false);
+			emitNeg(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::NEGI:
-			emitNeg(vctx, xarg, yarg, zarg, true);
+			emitNeg(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::NEGU:
-			emitNegu(vctx, xarg, yarg, zarg, false);
+			emitNegu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::NEGUI:
-			emitNegu(vctx, xarg, yarg, zarg, true);
+			emitNegu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SL:
-			emitSl(vctx, xarg, yarg, zarg, false);
+			emitSl(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::SLI:
-			emitSl(vctx, xarg, yarg, zarg, true);
+			emitSl(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SR:
-			emitSr(vctx, xarg, yarg, zarg, false);
+			emitSr(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::SRI:
-			emitSr(vctx, xarg, yarg, zarg, true);
+			emitSr(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SLU:
-			emitSlu(vctx, xarg, yarg, zarg, false);
+			emitSlu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::SLUI:
-			emitSlu(vctx, xarg, yarg, zarg, true);
+			emitSlu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SRU:
-			emitSru(vctx, xarg, yarg, zarg, false);
+			emitSru(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::SRUI:
-			emitSru(vctx, xarg, yarg, zarg, true);
+			emitSru(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CMP:
-			emitCmp(vctx, xarg, yarg, zarg, false);
+			emitCmp(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CMPI:
-			emitCmp(vctx, xarg, yarg, zarg, true);
+			emitCmp(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CMPU:
-			emitCmpu(vctx, xarg, yarg, zarg, false);
+			emitCmpu(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CMPUI:
-			emitCmpu(vctx, xarg, yarg, zarg, true);
+			emitCmpu(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSN:
-			emitCsn(vctx, xarg, yarg, zarg, false);
+			emitCsn(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSNI:
-			emitCsn(vctx, xarg, yarg, zarg, true);
+			emitCsn(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSZ:
-			emitCsz(vctx, xarg, yarg, zarg, false);
+			emitCsz(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSZI:
-			emitCsz(vctx, xarg, yarg, zarg, true);
+			emitCsz(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSP:
-			emitCsp(vctx, xarg, yarg, zarg, false);
+			emitCsp(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSPI:
-			emitCsp(vctx, xarg, yarg, zarg, true);
+			emitCsp(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSOD:
-			emitCsod(vctx, xarg, yarg, zarg, false);
+			emitCsod(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSODI:
-			emitCsod(vctx, xarg, yarg, zarg, true);
+			emitCsod(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSNN:
-			emitCsnn(vctx, xarg, yarg, zarg, false);
+			emitCsnn(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSNNI:
-			emitCsnn(vctx, xarg, yarg, zarg, true);
+			emitCsnn(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSNZ:
-			emitCsnz(vctx, xarg, yarg, zarg, false);
+			emitCsnz(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSNZI:
-			emitCsnz(vctx, xarg, yarg, zarg, true);
+			emitCsnz(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSNP:
-			emitCsnp(vctx, xarg, yarg, zarg, false);
+			emitCsnp(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSNPI:
-			emitCsnp(vctx, xarg, yarg, zarg, true);
+			emitCsnp(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::CSEV:
-			emitCsev(vctx, xarg, yarg, zarg, false);
+			emitCsev(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::CSEVI:
-			emitCsev(vctx, xarg, yarg, zarg, true);
+			emitCsev(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSN:
-			emitZsn(vctx, xarg, yarg, zarg, false);
+			emitZsn(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSNI:
-			emitZsn(vctx, xarg, yarg, zarg, true);
+			emitZsn(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSZ:
-			emitZsz(vctx, xarg, yarg, zarg, false);
+			emitZsz(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSZI:
-			emitZsz(vctx, xarg, yarg, zarg, true);
+			emitZsz(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSP:
-			emitZsp(vctx, xarg, yarg, zarg, false);
+			emitZsp(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSPI:
-			emitZsp(vctx, xarg, yarg, zarg, true);
+			emitZsp(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSOD:
-			emitZsod(vctx, xarg, yarg, zarg, false);
+			emitZsod(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSODI:
-			emitZsod(vctx, xarg, yarg, zarg, true);
+			emitZsod(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSNN:
-			emitZsnn(vctx, xarg, yarg, zarg, false);
+			emitZsnn(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSNNI:
-			emitZsnn(vctx, xarg, yarg, zarg, true);
+			emitZsnn(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSNZ:
-			emitZsnz(vctx, xarg, yarg, zarg, false);
+			emitZsnz(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSNZI:
-			emitZsnz(vctx, xarg, yarg, zarg, true);
+			emitZsnz(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSNP:
-			emitZsnp(vctx, xarg, yarg, zarg, false);
+			emitZsnp(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSNPI:
-			emitZsnp(vctx, xarg, yarg, zarg, true);
+			emitZsnp(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ZSEV:
-			emitZsev(vctx, xarg, yarg, zarg, false);
+			emitZsev(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ZSEVI:
-			emitZsev(vctx, xarg, yarg, zarg, true);
+			emitZsev(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::AND:
-			emitAnd(vctx, xarg, yarg, zarg, false);
+			emitAnd(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ANDI:
-			emitAnd(vctx, xarg, yarg, zarg, true);
+			emitAnd(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::OR:
-			emitOr(vctx, xarg, yarg, zarg, false);
+			emitOr(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ORI:
-			emitOr(vctx, xarg, yarg, zarg, true);
+			emitOr(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::XOR:
-			emitXor(vctx, xarg, yarg, zarg, false);
+			emitXor(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::XORI:
-			emitXor(vctx, xarg, yarg, zarg, true);
+			emitXor(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ANDN:
-			emitAndn(vctx, xarg, yarg, zarg, false);
+			emitAndn(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ANDNI:
-			emitAndn(vctx, xarg, yarg, zarg, true);
+			emitAndn(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::ORN:
-			emitOrn(vctx, xarg, yarg, zarg, false);
+			emitOrn(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::ORNI:
-			emitOrn(vctx, xarg, yarg, zarg, true);
+			emitOrn(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::NAND:
-			emitNand(vctx, xarg, yarg, zarg, false);
+			emitNand(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::NANDI:
-			emitNand(vctx, xarg, yarg, zarg, true);
+			emitNand(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::NOR:
-			emitNor(vctx, xarg, yarg, zarg, false);
+			emitNor(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::NORI:
-			emitNor(vctx, xarg, yarg, zarg, true);
+			emitNor(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::NXOR:
-			emitNxor(vctx, xarg, yarg, zarg, false);
+			emitNxor(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::NXORI:
-			emitNxor(vctx, xarg, yarg, zarg, true);
+			emitNxor(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::MUX:
-			emitMux(vctx, xarg, yarg, zarg, false);
+			emitMux(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::MUXI:
-			emitMux(vctx, xarg, yarg, zarg, true);
+			emitMux(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SADD:
-			emitSadd(vctx, xarg, yarg, zarg, false);
+			emitSadd(vctx, builder, xarg, yarg, zarg, false);
 			break;
 		case MmixLlvm::SADDI:
-			emitSadd(vctx, xarg, yarg, zarg, true);
+			emitSadd(vctx, builder, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::MOR:
+			emitMor(vctx, builder, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::MORI:
+			emitMor(vctx, builder, xarg, yarg, zarg, true);
+			break;
+		case MmixLlvm::MXOR:
+			emitMxor(vctx, builder, xarg, yarg, zarg, false);
+			break;
+		case MmixLlvm::MXORI:
+			emitMxor(vctx, builder, xarg, yarg, zarg, true);
 			break;
 		case MmixLlvm::SETH:
-			emitSeth(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitSeth(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::SETMH:
-			emitSetmh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitSetmh(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::SETML:
-			emitSetml(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitSetml(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::SETL:
-			emitSetl(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitSetl(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::INCH:
-			emitInch(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitInch(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::INCMH:
-			emitIncmh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitIncmh(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::INCML:
-			emitIncml(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitIncml(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::INCL:
-			emitIncl(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitIncl(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ORH:
-			emitOrh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitOrh(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ORMH:
-			emitOrmh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitOrmh(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ORML:
-			emitOrml(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitOrml(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ORL:
-			emitOrl(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitOrl(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ANDNH:
-			emitAndnh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitAndnh(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ANDNMH:
-			emitAndnmh(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitAndnmh(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ANDNML:
-			emitAndnml(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitAndnml(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::ANDNL:
-			emitAndnl(vctx, xarg, ((MXWyde)yarg << 8) | zarg);
+			emitAndnl(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg);
 			break;
 		case MmixLlvm::TRIP:
-			emitTrip(vctx, xarg, yarg, zarg);
+			emitTrip(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::TRAP:
-			emitTrap(vctx, xarg, yarg, zarg);
+			emitTrap(vctx, builder, xarg, yarg, zarg);
 			break;
 		case MmixLlvm::GETA:
-			emitGeta(vctx, xarg, ((MXWyde)yarg << 8) | zarg, false);
+			emitGeta(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::GETAB:
-			emitGeta(vctx, xarg, ((MXWyde)yarg << 8) | zarg, true);
+			emitGeta(vctx, builder, xarg, ((MXWyde)yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::JMP:
-			emitJmp(vctx, ((MXTetra)xarg << 16) | ((MXTetra)yarg << 8) | zarg, false);
+			emitJmp(vctx, builder, ((MXTetra)xarg << 16) | ((MXTetra)yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::JMPB:
-			emitJmp(vctx, ((MXTetra)xarg << 16) | ((MXTetra)yarg << 8) | zarg, true);
+			emitJmp(vctx, builder, ((MXTetra)xarg << 16) | ((MXTetra)yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BN:
-			emitBn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBn(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BNB:
-			emitBn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBn(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BZ:
-			emitBz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBz(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BZB:
-			emitBz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBz(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BP:
-			emitBp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBp(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BPB:
-			emitBp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBp(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BOD:
-			emitBod(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBod(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BODB:
-			emitBod(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBod(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BNN:
-			emitBnn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBnn(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BNNB:
-			emitBnn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBnn(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BNZ:
-			emitBnz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBnz(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BNZB:
-			emitBnz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBnz(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BNP:
-			emitBnp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBnp(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BNPB:
-			emitBnp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBnp(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::BEV:
-			emitBev(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBev(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::BEVB:
-			emitBev(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBev(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBN:
-			emitBn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBn(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBNB:
-			emitBn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBn(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBZ:
-			emitBz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBz(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBZB:
-			emitBz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBz(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBP:
-			emitBp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBp(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBPB:
-			emitBp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBp(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBOD:
-			emitBod(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBod(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBODB:
-			emitBod(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBod(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBNN:
-			emitBnn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBnn(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBNNB:
-			emitBnn(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBnn(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBNZ:
-			emitBnz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBnz(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBNZB:
-			emitBnz(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBnz(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBNP:
-			emitBnp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBnp(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBNPB:
-			emitBnp(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBnp(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		case MmixLlvm::PBEV:
-			emitBev(vctx, xarg, ((MXWyde) yarg << 8) | zarg, false);
+			emitBev(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, false);
 			break;
 		case MmixLlvm::PBEVB:
-			emitBev(vctx, xarg, ((MXWyde) yarg << 8) | zarg, true);
+			emitBev(vctx, builder, xarg, ((MXWyde) yarg << 8) | zarg, true);
 			break;
 		default:
 			assert(0 && "Not implemented");
@@ -889,7 +901,10 @@ void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma,
 		//vctx.getOCEntry() = entry;
 		//BasicBlock *exit = !term ? BasicBlock::Create(ctx, getInstrTwine(twines, instr, xPtr1), f) : 0;
 		//vctx.getOCExit() = exit;
-		emitInstruction(vctx);
+		LLVMContext& ctx = vctx.getLctx();
+		IRBuilder<> builder(ctx);
+		builder.SetInsertPoint(vctx.getOCEntry());
+		emitInstruction(vctx, builder);
 		//entry = exit;
 		xPtr0 = xPtr1;
 	}

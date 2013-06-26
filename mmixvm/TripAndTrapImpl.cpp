@@ -24,17 +24,13 @@ using namespace MmixLlvm::Private;
 using MmixLlvm::Private::RegisterRecord;
 using MmixLlvm::Private::RegistersMap;
 
-void MmixLlvm::Private::emitTrip(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
+void MmixLlvm::Private::emitTrip(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg)
 {
-	IRBuilder<> builder(vctx.getLctx());
-	builder.SetInsertPoint(vctx.getOCEntry());
 	emitLeaveVerticeViaTrip(vctx, builder, builder.getInt64(yarg), builder.getInt64(zarg), 0);
 }
 
-void MmixLlvm::Private::emitTrap(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
+void MmixLlvm::Private::emitTrap(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg)
 {
-	IRBuilder<> builder(vctx.getLctx());
-	builder.SetInsertPoint(vctx.getOCEntry());
 	Value* callParams[] = {
 		builder.CreateLoad(vctx.getModule().getGlobalVariable("ThisRef")),
 		builder.getInt64(vctx.getXPtr()),

@@ -73,6 +73,9 @@
     <None Include="data\hello.mms">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="data\mor.mms">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="data\primes.mms">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

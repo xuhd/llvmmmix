@@ -51,6 +51,10 @@ namespace MmixLlvm {
 	
 		static void muluImpl(MXOcta arg1, MXOcta arg2, MXOcta* hiProd, MXOcta* loProd);
 
+		static MXOcta morImpl(MXOcta arg1, MXOcta arg2);
+
+		static MXOcta mxorImpl(MXOcta arg1, MXOcta arg2);
+
 		static void divuImpl(MXOcta hidivident, MXOcta lodivident, MXOcta divisor, MXOcta* quotient, MXOcta* remainder);
 
 		static MXOcta trapHandlerImpl(void* handback, MXOcta instr, MXOcta vector);

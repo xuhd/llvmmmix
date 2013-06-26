@@ -109,6 +109,18 @@ void MmixHwImpl::postInit()
 		Function::ExternalLinkage, "DivuImpl", _module);
 
 	params[0] = Type::getInt64Ty(_lctx);
+	params[1] = Type::getInt64Ty(_lctx);
+	llvm::Function* morImplF = llvm::Function::Create(
+		FunctionType::get(Type::getInt64Ty(_lctx), ArrayRef<Type*>(params, params + 2), false), 
+		Function::ExternalLinkage, "MorImpl", _module);
+
+	params[0] = Type::getInt64Ty(_lctx);
+	params[1] = Type::getInt64Ty(_lctx);
+	llvm::Function* mxorImplF = llvm::Function::Create(
+		FunctionType::get(Type::getInt64Ty(_lctx), ArrayRef<Type*>(params, params + 2), false), 
+		Function::ExternalLinkage, "MxorImpl", _module);
+
+	params[0] = Type::getInt64Ty(_lctx);
 	llvm::Function* adjust64EndiannessImplF = llvm::Function::Create(
 		FunctionType::get(Type::getInt64Ty(_lctx), ArrayRef<Type*>(params, params + 1), false), 
 		Function::ExternalLinkage, "Adjust64EndiannessImpl", _module);
@@ -134,6 +146,8 @@ void MmixHwImpl::postInit()
 	_ee.reset(EngineBuilder(_module).create());
 	_ee->addGlobalMapping(muluImplF, &MmixHwImpl::muluImpl);
 	_ee->addGlobalMapping(divuImplF, &MmixHwImpl::divuImpl);
+	_ee->addGlobalMapping(morImplF, &MmixHwImpl::morImpl);
+	_ee->addGlobalMapping(mxorImplF, &MmixHwImpl::mxorImpl);
 	_ee->addGlobalMapping(adjust64EndiannessImplF, &MmixHwImpl::adjust64EndiannessImpl);
 	_ee->addGlobalMapping(debugInt32, &MmixHwImpl::debugInt32);
 	_ee->addGlobalMapping(debugInt64, &MmixHwImpl::debugInt64);
@@ -204,6 +218,31 @@ MXOcta MmixHwImpl::trapHandlerImpl(void* handback, MXOcta instr, MXOcta vector) 
 	MmixHwImpl* this__ = static_cast<MmixHwImpl*>(handback);
 	return this__->_os->handleTrap(*this__, instr, vector);
 }
+
+MXOcta MmixHwImpl::morImpl(MXOcta y, MXOcta z) {
+	MXOcta retVal = 0LL;
+	for (int i = 0; i < 8; i++) {
+		MXByte b = (MXByte)((z >> (i << 3)) & 0xFF);
+		for (int j = 0; j < 8; j++) {
+			if ((b & (1 << j)) != 0)
+				retVal |= ((y >> (j << 3)) & 0xFF) << (i << 3);
+		}
+	}
+    return retVal;
+}
+
+MXOcta MmixHwImpl::mxorImpl(MXOcta y, MXOcta z) {
+	MXOcta retVal = 0LL;
+	for (int i = 0; i < 8; i++) {
+		MXByte b = (MXByte)((z >> (i << 3)) & 0xFF);
+		for (int j = 0; j < 8; j++) {
+			if ((b & (1 << j)) != 0)
+				retVal ^= ((y >> (j << 3)) & 0xFF) << (i << 3);
+		}
+	}
+    return retVal;
+}
+
 
 boost::shared_ptr<MmixHwImpl> MmixHwImpl::create(const HardwareCfg& hwCfg, boost::shared_ptr<OS> os)
 {

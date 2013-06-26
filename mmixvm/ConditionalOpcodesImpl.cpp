@@ -25,18 +25,18 @@ using MmixLlvm::MXByte;
 namespace {
 	template<class Cond> 
 		struct EmitCond {
-			static void emit(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
+			static void emit(VerticeContext& vctx, IRBuilder<>& builder,
+				MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
 		};
 
-		template<class Cond> void EmitCond<Cond>::emit(VerticeContext& vctx, 
+		template<class Cond> void EmitCond<Cond>::emit(VerticeContext& vctx, IRBuilder<>& builder,
 			MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 		{
-			IRBuilder<> builder(vctx.getLctx());
-			builder.SetInsertPoint(vctx.getOCEntry());
-			BasicBlock *condTrueBlock = BasicBlock::Create(vctx.getLctx(), genUniq("cond_true"), &vctx.getFunction());
-			BasicBlock *condFalseBlock = BasicBlock::Create(vctx.getLctx(), genUniq("cond_false"), &vctx.getFunction());
-			BasicBlock *epilogue = BasicBlock::Create(vctx.getLctx(), genUniq("epilogue"), &vctx.getFunction());
-			Value* yarg0 = vctx.getRegister( yarg);
+			LLVMContext& ctx = vctx.getLctx();
+			BasicBlock *condTrueBlock = BasicBlock::Create(ctx, genUniq("cond_true"), &vctx.getFunction());
+			BasicBlock *condFalseBlock = BasicBlock::Create(ctx, genUniq("cond_false"), &vctx.getFunction());
+			BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), &vctx.getFunction());
+			Value* yarg0 = vctx.getRegister(yarg);
 			Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 			Value* cond0 = typename Cond::emitCond(builder, yarg0);
 			builder.CreateCondBr(cond0, condTrueBlock, condFalseBlock);
@@ -46,15 +46,15 @@ namespace {
 			Value* defXval = typename Cond::emitDefXVal(vctx, builder, xarg);
 			builder.CreateBr(epilogue);
 			builder.SetInsertPoint(epilogue);
-			PHINode* result = builder.CreatePHI(Type::getInt64Ty(vctx.getLctx()), 0);
+			PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 			result->addIncoming(zarg0, condTrueBlock);
 			result->addIncoming(defXval, condFalseBlock);
-			builder.CreateBr(vctx.getOCExit());
 			vctx.assignRegister(xarg, result);
+			builder.CreateBr(vctx.getOCExit());
 		}
 };
 
-void MmixLlvm::Private::emitCsn(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitCsn(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -65,10 +65,10 @@ void MmixLlvm::Private::emitCsn(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 			return vctx.getRegister( xarg);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 		
-void MmixLlvm::Private::emitCsz(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitCsz(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -79,10 +79,10 @@ void MmixLlvm::Private::emitCsz(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 			return vctx.getRegister( xarg);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 		
-void MmixLlvm::Private::emitCsp(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitCsp(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -93,10 +93,10 @@ void MmixLlvm::Private::emitCsp(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 			return vctx.getRegister( xarg);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 		
-void MmixLlvm::Private::emitCsod(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitCsod(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -107,10 +107,10 @@ void MmixLlvm::Private::emitCsod(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return vctx.getRegister( xarg);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 		
-void MmixLlvm::Private::emitCsnn(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitCsnn(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -121,10 +121,10 @@ void MmixLlvm::Private::emitCsnn(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return vctx.getRegister( xarg);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitCsnz(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitCsnz(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -135,10 +135,10 @@ void MmixLlvm::Private::emitCsnz(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return vctx.getRegister( xarg);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitCsnp(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitCsnp(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -149,10 +149,10 @@ void MmixLlvm::Private::emitCsnp(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return vctx.getRegister( xarg);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitCsev(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitCsev(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -160,13 +160,13 @@ void MmixLlvm::Private::emitCsev(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 		}
 
 		static Value* emitDefXVal(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg) {
-			return vctx.getRegister( xarg);
+			return vctx.getRegister(xarg);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitZsn(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitZsn(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -177,10 +177,10 @@ void MmixLlvm::Private::emitZsn(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 			return builder.getInt64(0);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 		
-void MmixLlvm::Private::emitZsz(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitZsz(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -191,10 +191,10 @@ void MmixLlvm::Private::emitZsz(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 			return builder.getInt64(0);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 		
-void MmixLlvm::Private::emitZsp(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitZsp(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -205,10 +205,10 @@ void MmixLlvm::Private::emitZsp(VerticeContext& vctx, MXByte xarg, MXByte yarg, 
 			return builder.getInt64(0);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 		
-void MmixLlvm::Private::emitZsod(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitZsod(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -219,10 +219,10 @@ void MmixLlvm::Private::emitZsod(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return builder.getInt64(0);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 		
-void MmixLlvm::Private::emitZsnn(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitZsnn(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -233,10 +233,10 @@ void MmixLlvm::Private::emitZsnn(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return builder.getInt64(0);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitZsnz(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitZsnz(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -247,10 +247,10 @@ void MmixLlvm::Private::emitZsnz(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return builder.getInt64(0);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitZsnp(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitZsnp(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -261,10 +261,10 @@ void MmixLlvm::Private::emitZsnp(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return builder.getInt64(0);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 
-void MmixLlvm::Private::emitZsev(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitZsev(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	struct Cond {
 		static Value* emitCond(IRBuilder<>& builder, Value* arg) {
@@ -275,6 +275,6 @@ void MmixLlvm::Private::emitZsev(VerticeContext& vctx, MXByte xarg, MXByte yarg,
 			return builder.getInt64(0);
 		}
 	};
-	EmitCond<Cond>::emit(vctx, xarg, yarg, zarg, immediate);
+	EmitCond<Cond>::emit(vctx, builder, xarg, yarg, zarg, immediate);
 }
 

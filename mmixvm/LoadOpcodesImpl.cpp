@@ -28,30 +28,28 @@ namespace {
 		static Value* makeA(VerticeContext& vctx, IRBuilder<>& builder, Value* yVal, Value* zVal);
 		static Value* emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* iref, bool isSigned);
 	public:
-		static void emit(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned, bool immediate);
-		static void emitht(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
+		static void emit(VerticeContext& vctx, IRBuilder<>& builder, 
+			MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned, bool immediate);
+		static void emitht(VerticeContext& vctx, IRBuilder<>& builder,
+			MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
 	};
 
-	template<int Pow2> void EmitL<Pow2>::emit(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned, bool immediate)
+	template<int Pow2> void EmitL<Pow2>::emit(VerticeContext& vctx, IRBuilder<>& builder, 
+		MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned, bool immediate)
 	{
-		
-		IRBuilder<> builder(vctx.getLctx());
-		builder.SetInsertPoint(vctx.getOCEntry());
-		Value* yVal = vctx.getRegister( yarg);
+		Value* yVal = vctx.getRegister(yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 		Value* theA = makeA(vctx, builder, yVal, zVal);
 		Value* readVal = emitFetchMem(vctx, builder, theA);
 		Value* result = emitLoad(vctx, builder, readVal, isSigned);
 		vctx.assignRegister(xarg, result);
 		builder.CreateBr(vctx.getOCExit());
-		//addRegisterToCache(vctx, xarg, result, true);
 	}
 
-	template<> void EmitL<2>::emitht(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate) 
+	template<> void EmitL<2>::emitht(VerticeContext& vctx, IRBuilder<>& builder,
+		MXByte xarg, MXByte yarg, MXByte zarg, bool immediate) 
 	{
-		IRBuilder<> builder(vctx.getLctx());
-		builder.SetInsertPoint(vctx.getOCEntry());
-		Value* yVal = vctx.getRegister( yarg);
+		Value* yVal = vctx.getRegister(yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 		Value* theA = makeA(vctx, builder, yVal, zVal);
 		Value* readVal = emitFetchMem(vctx, builder, theA);
@@ -72,22 +70,26 @@ namespace {
 
 	template<> Value* EmitL<3>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt64Ty(vctx.getLctx()));
+		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(),
+			vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt64Ty(vctx.getLctx()));
 	}
 
 	template<> Value* EmitL<2>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt32Ty(vctx.getLctx()));
+		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(),
+			vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt32Ty(vctx.getLctx()));
 	}
 
 	template<> Value* EmitL<1>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt16Ty(vctx.getLctx()));
+		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(),
+			vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt16Ty(vctx.getLctx()));
 	}
 
 	template<> Value* EmitL<0>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt8Ty(vctx.getLctx()));
+		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(),
+			vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt8Ty(vctx.getLctx()));
 	}
 
 	template<> Value* EmitL<3>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)
@@ -111,78 +113,83 @@ namespace {
 	}
 };
 
-void MmixLlvm::Private::emitLdo(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
+void MmixLlvm::Private::emitLdo(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg)
 {
-	EmitL<3>::emit(vctx, xarg, yarg, zarg, false, false);
+	EmitL<3>::emit(vctx, builder, xarg, yarg, zarg, false, false);
 }
 
-void MmixLlvm::Private::emitLdoi(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
+void MmixLlvm::Private::emitLdoi(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg)
 {
-	EmitL<3>::emit(vctx, xarg, yarg, zarg, false, true);
+	EmitL<3>::emit(vctx, builder, xarg, yarg, zarg, false, true);
 }
 
-void MmixLlvm::Private::emitLdt(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
+void MmixLlvm::Private::emitLdt(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
 {
-	EmitL<2>::emit(vctx, xarg, yarg, zarg, false, false);
+	EmitL<2>::emit(vctx, builder, xarg, yarg, zarg, false, false);
 }
 
-void MmixLlvm::Private::emitLdti(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
+void MmixLlvm::Private::emitLdti(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
 {
-	EmitL<2>::emit(vctx, xarg, yarg, zarg, false, true);
+	EmitL<2>::emit(vctx, builder, xarg, yarg, zarg, false, true);
 }
 
-void MmixLlvm::Private::emitLdw(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
+void MmixLlvm::Private::emitLdw(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
 {
-	EmitL<1>::emit(vctx, xarg, yarg, zarg, false, false);
+	EmitL<1>::emit(vctx, builder, xarg, yarg, zarg, false, false);
 }
 
-void MmixLlvm::Private::emitLdwi(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
+void MmixLlvm::Private::emitLdwi(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
 {
-	EmitL<1>::emit(vctx, xarg, yarg, zarg, false, true);
+	EmitL<1>::emit(vctx, builder, xarg, yarg, zarg, false, true);
 }
 
-void MmixLlvm::Private::emitLdb(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
+void MmixLlvm::Private::emitLdb(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
 {
-	EmitL<0>::emit(vctx, xarg, yarg, zarg, false, false);
+	EmitL<0>::emit(vctx, builder, xarg, yarg, zarg, false, false);
 }
 
-void MmixLlvm::Private::emitLdbi(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
+void MmixLlvm::Private::emitLdbi(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte yarg, MXByte zarg, bool isSigned)
 {
-	EmitL<0>::emit(vctx, xarg, yarg, zarg, false, true);
+	EmitL<0>::emit(vctx, builder, xarg, yarg, zarg, false, true);
 }
 
-void MmixLlvm::Private::emitLdht(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
+void MmixLlvm::Private::emitLdht(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte yarg, MXByte zarg)
 {
-	EmitL<2>::emitht(vctx, xarg, yarg, zarg, false);
+	EmitL<2>::emitht(vctx, builder, xarg, yarg, zarg, false);
 }
 
-void MmixLlvm::Private::emitLdhti(VerticeContext& vctx, MXByte xarg, MXByte yarg, MXByte zarg)
+void MmixLlvm::Private::emitLdhti(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte yarg, MXByte zarg)
 {
-	EmitL<2>::emitht(vctx, xarg, yarg, zarg, true);
+	EmitL<2>::emitht(vctx, builder, xarg, yarg, zarg, true);
 }
 
-void MmixLlvm::Private::emitGet(VerticeContext& vctx, MXByte xarg, MXByte zarg)
+void MmixLlvm::Private::emitGet(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte zarg)
 {
-	IRBuilder<> builder(vctx.getLctx());
-	builder.SetInsertPoint(vctx.getOCEntry());
 	Value* val = vctx.getSpRegister((MmixLlvm::SpecialReg)zarg);
 	vctx.assignRegister(xarg, val);
 	builder.CreateBr(vctx.getOCExit());
 }
 		
-void MmixLlvm::Private::emitPut(VerticeContext& vctx, MXByte xarg, MXByte zarg, bool immediate)
+void MmixLlvm::Private::emitPut(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXByte zarg, bool immediate)
 {
-	IRBuilder<> builder(vctx.getLctx());
-	builder.SetInsertPoint(vctx.getOCEntry());
 	Value* val = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 	vctx.assignSpRegister((SpecialReg)xarg, val);
 	builder.CreateBr(vctx.getOCExit());
 }
 
-void MmixLlvm::Private::emitGeta(VerticeContext& vctx, MXByte xarg, MXWyde yzarg, bool backward) {
-	
-	IRBuilder<> builder(vctx.getLctx());
-	builder.SetInsertPoint(vctx.getOCEntry());
+void MmixLlvm::Private::emitGeta(VerticeContext& vctx, IRBuilder<>& builder,
+	MXByte xarg, MXWyde yzarg, bool backward)
+{
 	Value* m;
 	if (!backward)
 		m = builder.getInt64(vctx.getXPtr() + (yzarg << 2));
