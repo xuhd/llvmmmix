@@ -26,6 +26,7 @@ using MmixLlvm::MXByte;
 using MmixLlvm::MXWyde;
 using MmixLlvm::MXTetra;
 using MmixLlvm::MXOcta;
+using llvm::Intrinsic::ID;
 
 namespace {
 	class SimpleVerticeContext : public VerticeContext {
@@ -81,13 +82,23 @@ namespace {
 
 		virtual LLVMContext& getLctx();
 
-		virtual Module& getModule();
+		//virtual Module& getModule();
 
-		virtual Function& getFunction();
+		virtual Value* getModuleVar(const char* varName);
+
+		virtual Function* getModuleFunction(const char* varName);
+
+		virtual Function* getIntrinsic(ID id, ArrayRef<Type*> Tys);
+
+		//virtual Function& getFunction();
 
 		virtual BasicBlock *getOCEntry();
 
 		virtual BasicBlock *getOCExit();
+
+		virtual llvm::BasicBlock *makeBlock(const llvm::Twine& prefix);
+
+		virtual std::vector<llvm::Argument*> getVerticeArgs();
 
 		virtual Value* getRegister(MXByte reg);
 
@@ -167,13 +178,26 @@ namespace {
 		return _lctx;
 	}
 
-	Module& SimpleVerticeContext::getModule() {
-		return _module;
+	//Module& SimpleVerticeContext::getModule() {
+	//	return _module;
+	//}
+
+	Value* SimpleVerticeContext::getModuleVar(const char* varName) {
+		return _module.getGlobalVariable(varName);
 	}
 
-	Function& SimpleVerticeContext::getFunction() {
-		return _func;
+	Function* SimpleVerticeContext::getModuleFunction(const char* funcName) {
+		return _module.getFunction(funcName);
 	}
+
+	Function* SimpleVerticeContext::getIntrinsic(ID id, ArrayRef<Type*> argTypes) {
+		return llvm::Intrinsic::getDeclaration(&_module, id, argTypes);
+	}
+
+
+	//Function& SimpleVerticeContext::getFunction() {
+	//	return _func;
+	//}
 
 	BasicBlock* SimpleVerticeContext::getOCEntry() {
 		return _entry;
@@ -183,20 +207,28 @@ namespace {
 		return _exit;
 	}
 
+	BasicBlock* SimpleVerticeContext::makeBlock(const Twine& prefix) {
+		return BasicBlock::Create(_lctx, genUniq("success"), &_func);
+	}
+
+	std::vector<llvm::Argument*> SimpleVerticeContext::getVerticeArgs() {
+		std::vector<llvm::Argument*> retVal;
+		for (auto itr = _func.arg_begin(); itr != _func.arg_end(); itr++)
+			retVal.push_back(&*itr);
+		return retVal;
+	}
+
 	Value* SimpleVerticeContext::getRegister(MXByte reg) {
 		IRBuilder<> builder(_lctx);
 		builder.SetInsertPoint(_init);
 		RefMap::iterator itr = _regMap.find(reg);
 		Value *retVal;
 		if (itr == _regMap.end()) {
-			Value* regGlob = _module.getGlobalVariable("Registers");
-			Value* ix[2];
-			ix[0] = builder.getInt32(0);
-			ix[1] = builder.getInt32(reg);
+			Value* regGlob = _module.getGlobalVariable("RegisterStackTop");
 			Value* val = builder.CreateLoad(
-				builder.CreatePointerCast(
-				builder.CreateGEP(regGlob, ArrayRef<Value*>(ix, ix + 2)), 
-					Type::getInt64PtrTy(_lctx)), false, Twine("reg")+Twine(reg));
+				builder.CreateGEP(
+					builder.CreateLoad(regGlob, false),
+					builder.getInt32(reg)), false);
 			RegisterRecord r0;
 			r0.Dirty = false;
 			r0.Value = val;
@@ -882,7 +914,7 @@ namespace {
 	}
 }
 
-void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma, 
+void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, Engine& e, 
 	MXOcta xPtr, Vertice& out)
 {
 	MXOcta xPtr0 = xPtr;
@@ -892,7 +924,7 @@ void MmixLlvm::emitSimpleVertice(LLVMContext& ctx, Module& m, MemAccessor& ma,
 	//BasicBlock *entry = BasicBlock::Create(ctx, genUniq("entry") + Twine(xPtr), f);
 	bool term = false;
 	while (!term) {
-		MXTetra instr = ma.readTetra(xPtr0);
+		MXTetra instr = e.readTetra(xPtr0);
 		MXOcta xPtr1 = xPtr += sizeof(MXTetra);
 		term = isTerm(instr);
 		vctx.feedNewOpcode(xPtr0, instr, term);

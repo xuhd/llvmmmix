@@ -9,6 +9,7 @@ using llvm::Module;
 using llvm::Type;
 using llvm::PointerType;
 using llvm::Value;
+using llvm::Argument;
 using llvm::Function;
 using llvm::BasicBlock;
 using llvm::IRBuilder;
@@ -34,7 +35,7 @@ namespace {
 };
 
 Value* MmixLlvm::Private::emitAdjust64Endianness(VerticeContext& vctx, IRBuilder<>& builder, Value* val) {
-	Function* f = vctx.getModule().getFunction("Adjust64EndiannessImpl");
+	Function* f = vctx.getModuleFunction("Adjust64EndiannessImpl");
 	Value* args[] = { val };
 	return builder.CreateCall(f, ArrayRef<Value*>(args, args + 1));
 }
@@ -68,20 +69,18 @@ namespace {
 	void saveRegisters(VerticeContext& vctx, IRBuilder<>& builder)
 	{
 		LLVMContext& ctx = vctx.getLctx();
-		Value *registers = vctx.getModule().getGlobalVariable("Registers");
-		Value *specialRegisters = vctx.getModule().getGlobalVariable("SpecialRegisters");
+		Value* regGlob = vctx.getModuleVar("RegisterStackTop");
+		Value *specialRegisters = vctx.getModuleVar("SpecialRegisters");
 		std::vector<MXByte> dirtyRegs(vctx.getDirtyRegisters());
 		for (std::vector<MXByte>::iterator itr = dirtyRegs.begin();
 			 itr != dirtyRegs.end();
 			 ++itr)
 		{
-			Value* ix[2];
-			ix[0] = builder.getInt32(0);
-			ix[1] = builder.getInt32(*itr);
 			builder.CreateStore(
 				vctx.getRegister(*itr),
-				builder.CreatePointerCast(
-					builder.CreateGEP(registers, ArrayRef<Value*>(ix, ix + 2)), Type::getInt64PtrTy(ctx)));
+					builder.CreateGEP(
+						builder.CreateLoad(regGlob, false),
+						builder.getInt32(*itr)));
 		}
 		std::vector<MmixLlvm::SpecialReg> dirtySRegs(vctx.getDirtySpRegisters());
 		for (std::vector<MmixLlvm::SpecialReg>::iterator itr = dirtySRegs.begin();
@@ -118,55 +117,55 @@ void MmixLlvm::Private::emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBu
 	branch->assignSpRegister(MmixLlvm::rY, rY);
 	branch->assignSpRegister(MmixLlvm::rZ, rZ);
 	saveRegisters(*branch, builder);
-	Function::ArgumentListType::iterator argItr = branch->getFunction().arg_begin();
-	builder.CreateStore(builder.getInt64(branch->getXPtr()), argItr);
-	builder.CreateStore(builder.getInt64(target), ++argItr);
+	std::vector<Argument*> args(vctx.getVerticeArgs());
+	builder.CreateStore(builder.getInt64(branch->getXPtr()), args[0]);
+	builder.CreateStore(builder.getInt64(target), args[1]);
 	builder.CreateRetVoid();
 }
 
 void MmixLlvm::Private::emitLeaveVerticeViaJump(VerticeContext& vctx, IRBuilder<>& builder, MXOcta target) 
 {
 	saveRegisters(vctx, builder);
-	Function::ArgumentListType::iterator argItr = vctx.getFunction().arg_begin();
-	builder.CreateStore(builder.getInt64(vctx.getXPtr()), argItr);
-	builder.CreateStore(builder.getInt64(target), ++argItr);
+	std::vector<Argument*> args(vctx.getVerticeArgs());
+	builder.CreateStore(builder.getInt64(vctx.getXPtr()), args[0]);
+	builder.CreateStore(builder.getInt64(target), args[1]);
 	builder.CreateRetVoid();
 }
 
-Value* MmixLlvm::Private::emitFetchMem(LLVMContext& ctx, Module& m, Function& f,
-	IRBuilder<>& builder, Value* theA, Type* ty) 
+Value* MmixLlvm::Private::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA, Type* ty) 
 {
-	Value* glob = m.getGlobalVariable("AddressTranslateTable");
+	Value* glob = vctx.getModuleVar("AddressTranslateTable");
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
 	ix[1] = builder.CreateIntCast(
 		builder.CreateAnd(
 			builder.CreateLShr(theA, REGION_BIT_OFFSET),
 			builder.getInt64(TWO_ENABLED_BITS)),
-		Type::getInt32Ty(ctx), false);
+			Type::getInt32Ty(vctx.getLctx()), false);
 	Value *attVal = builder.CreateLoad(builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)));
-	glob = m.getGlobalVariable("Memory");
-	Value* normAddr = builder.CreateIntCast(builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)), Type::getInt32Ty(ctx), false);
+	glob = vctx.getModuleVar("Memory");
+	Value* normAddr = builder.CreateIntCast(builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)), Type::getInt32Ty(vctx.getLctx()), false);
 	ix[1] = builder.CreateAdd(normAddr, attVal);
 	Value* targetPtr = builder.CreatePointerCast(
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), PointerType::get(ty, 0)); 
 	return builder.CreateLoad(targetPtr);
 }
 
-void MmixLlvm::Private::emitStoreMem(LLVMContext& ctx, Module& m, Function& f,
-	IRBuilder<>& builder, Value* theA, Value* val)
+void MmixLlvm::Private::emitStoreMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA, Value* val)
 {
-	Value* glob = m.getGlobalVariable("AddressTranslateTable");
+	Value* glob = vctx.getModuleVar("AddressTranslateTable");
 	Value* ix[2];
 	ix[0] = builder.getInt32(0);
 	ix[1] = builder.CreateIntCast(
 		builder.CreateAnd(
 			builder.CreateLShr(theA, REGION_BIT_OFFSET),
 			builder.getInt64(TWO_ENABLED_BITS)),
-		Type::getInt32Ty(ctx), false);
+				Type::getInt32Ty(vctx.getLctx()), false);
 	Value *attVal = builder.CreateLoad(builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)));
-	glob = m.getGlobalVariable("Memory");
-	Value* normAddr = builder.CreateIntCast(builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)), Type::getInt32Ty(ctx), false);
+	glob = vctx.getModuleVar("Memory");
+	Value* normAddr = builder.CreateIntCast(
+		builder.CreateAnd(theA, builder.getInt64(ADDR_MASK)), 
+			Type::getInt32Ty(vctx.getLctx()), false);
 	ix[1] = builder.CreateAdd(normAddr, attVal);
 	Value* targetPtr = builder.CreatePointerCast(
 		builder.CreateGEP(glob, ArrayRef<Value*>(ix, ix + 2)), (*(*val).getType()).getPointerTo()); 
@@ -198,5 +197,5 @@ MXOcta MmixLlvm::Private::getArithTripVector(MmixLlvm::ArithFlag flag) {
 
 void MmixLlvm::Private::debugInt64(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* val) {
 	Value* callParams[] = { val };
-	builder.CreateCall(vctx.getModule().getFunction("DebugInt64"), ArrayRef<Value*>(callParams, callParams + 1));
+	builder.CreateCall(vctx.getModuleFunction("DebugInt64"), ArrayRef<Value*>(callParams, callParams + 1));
 }

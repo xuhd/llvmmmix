@@ -17,6 +17,8 @@ namespace MmixLlvm {
 	class MmixHwImpl: public Engine {
 		void* _handback[1];
 
+		MXOcta* _regStackTop[1];
+
 		std::vector<MXOcta> _registers;
 
 		std::vector<MXOcta> _spRegisters;

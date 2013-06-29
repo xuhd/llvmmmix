@@ -34,7 +34,7 @@ namespace {
 		IRBuilder<>& builder, MXByte xarg, MXTetra yzarg, bool backward)
 	{
 		LLVMContext& ctx = vctx.getLctx();
-		BasicBlock *condTrueBlock = BasicBlock::Create(ctx, genUniq("cond_true"), &vctx.getFunction());
+		BasicBlock *condTrueBlock = vctx.makeBlock("cond_true");
 		Value* xarg0 = vctx.getRegister(xarg);
 		Value* cond0 = typename Cond::emitCond(builder, xarg0);
 		builder.CreateCondBr(cond0, condTrueBlock, vctx.getOCExit());

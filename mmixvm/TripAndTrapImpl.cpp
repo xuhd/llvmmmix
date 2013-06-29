@@ -9,6 +9,7 @@ using llvm::Type;
 using llvm::PointerType;
 using llvm::IntegerType;
 using llvm::Value;
+using llvm::Argument;
 using llvm::Function;
 using llvm::BasicBlock;
 using llvm::IRBuilder;
@@ -32,7 +33,7 @@ void MmixLlvm::Private::emitTrip(VerticeContext& vctx, IRBuilder<>& builder, MXB
 void MmixLlvm::Private::emitTrap(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg)
 {
 	Value* callParams[] = {
-		builder.CreateLoad(vctx.getModule().getGlobalVariable("ThisRef")),
+		builder.CreateLoad(vctx.getModuleVar("ThisRef")),
 		builder.getInt64(vctx.getXPtr()),
 		vctx.getSpRegister(MmixLlvm::rTT)
 	};
@@ -50,15 +51,15 @@ void MmixLlvm::Private::emitTrap(VerticeContext& vctx, IRBuilder<>& builder, MXB
 	vctx.assignSpRegister(MmixLlvm::rYY, builder.getInt64(yarg));
 	vctx.assignSpRegister(MmixLlvm::rZZ, builder.getInt64(zarg));
 	flushRegistersCache(vctx, builder);
-	Value* newx = builder.CreateCall(vctx.getModule().getFunction("TrapHandler"), ArrayRef<Value*>(callParams, callParams + 3));
-	BasicBlock *verticeExit = BasicBlock::Create(vctx.getLctx(), genUniq("vertice_exit"), &vctx.getFunction());
+	Value* newx = builder.CreateCall(vctx.getModuleFunction("TrapHandler"), ArrayRef<Value*>(callParams, callParams + 3));
+	BasicBlock *verticeExit = vctx.makeBlock("vertice_exit");
 	if (!(yarg == 0 && zarg == 0))
 		builder.CreateCondBr(builder.CreateICmpEQ(newxExpected, newx), vctx.getOCExit(), verticeExit);
 	else
 		builder.CreateBr(verticeExit);
 	builder.SetInsertPoint(verticeExit);
-	Function::ArgumentListType::iterator argItr = vctx.getFunction().arg_begin();
-	builder.CreateStore(builder.getInt64(vctx.getXPtr()), argItr);
-	builder.CreateStore(newx, ++argItr);
+	std::vector<Argument*> args(vctx.getVerticeArgs());
+	builder.CreateStore(builder.getInt64(vctx.getXPtr()), args[0]);
+	builder.CreateStore(newx, args[1]);
 	builder.CreateRetVoid();
 }

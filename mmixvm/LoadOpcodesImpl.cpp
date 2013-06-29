@@ -70,26 +70,22 @@ namespace {
 
 	template<> Value* EmitL<3>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(),
-			vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt64Ty(vctx.getLctx()));
+		return MmixLlvm::Private::emitFetchMem(vctx, builder, theA, Type::getInt64Ty(vctx.getLctx()));
 	}
 
 	template<> Value* EmitL<2>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(),
-			vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt32Ty(vctx.getLctx()));
+		return MmixLlvm::Private::emitFetchMem(vctx, builder, theA, Type::getInt32Ty(vctx.getLctx()));
 	}
 
 	template<> Value* EmitL<1>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(),
-			vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt16Ty(vctx.getLctx()));
+		return MmixLlvm::Private::emitFetchMem(vctx, builder, theA, Type::getInt16Ty(vctx.getLctx()));
 	}
 
 	template<> Value* EmitL<0>::emitFetchMem(VerticeContext& vctx, IRBuilder<>& builder, Value* theA)
 	{
-		return MmixLlvm::Private::emitFetchMem(vctx.getLctx(),
-			vctx.getModule(), vctx.getFunction(), builder, theA, Type::getInt8Ty(vctx.getLctx()));
+		return MmixLlvm::Private::emitFetchMem(vctx, builder, theA, Type::getInt8Ty(vctx.getLctx()));
 	}
 
 	template<> Value* EmitL<3>::emitLoad(VerticeContext& vctx, IRBuilder<>& builder, Value* readVal, bool isSigned)

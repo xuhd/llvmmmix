@@ -53,11 +53,11 @@ namespace {
 		Value* xVal = vctx.getRegister(xarg);
 		Value* loBoundCk = builder.CreateICmpSGE(xVal, builder.getInt64(LoBound));
 		Value* hiBoundCk = builder.CreateICmpSLE(xVal, builder.getInt64(HiBound));
-		BasicBlock *success = BasicBlock::Create(vctx.getLctx(), genUniq("success"), &vctx.getFunction());
-		BasicBlock *overflow = BasicBlock::Create(vctx.getLctx(), genUniq("overflow"), &vctx.getFunction());
-		BasicBlock *setOverflowFlag = BasicBlock::Create(vctx.getLctx(), genUniq("set_overflow_flag"), &vctx.getFunction());
-		BasicBlock *exitViaOverflowTrip = BasicBlock::Create(vctx.getLctx(), genUniq("exit_via_overflow_trip"), &vctx.getFunction());
-		BasicBlock *epilogue = BasicBlock::Create(vctx.getLctx(), genUniq("epilogue"), &vctx.getFunction());
+		BasicBlock *success = vctx.makeBlock("success");
+		BasicBlock *overflow = vctx.makeBlock("overflow");
+		BasicBlock *setOverflowFlag = vctx.makeBlock("set_overflow_flag");
+		BasicBlock *exitViaOverflowTrip = vctx.makeBlock("exit_via_overflow_trip");
+		BasicBlock *epilogue = vctx.makeBlock("epilogue");
 		Value* initRaVal = vctx.getSpRegister(MmixLlvm::rA);
 		Value* yVal = vctx.getRegister( yarg);
 		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
@@ -65,7 +65,7 @@ namespace {
 		builder.CreateCondBr(builder.CreateAnd(loBoundCk, hiBoundCk), success, overflow);
 		builder.SetInsertPoint(success);
 		Value* valToStore = createStoreCast(vctx.getLctx(), builder, xVal, true);
-		emitStoreMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, adjustEndianness(vctx, builder, valToStore));
+		emitStoreMem(vctx, builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(epilogue);
 		builder.SetInsertPoint(overflow);
 		Value* overflowAlreadySet = 
@@ -94,7 +94,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 		Value* theA = makeA(vctx.getLctx(), builder, yVal, zVal);
 		Value* valToStore = createStoreCast(vctx.getLctx(), builder, xVal, false);
-		emitStoreMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, adjustEndianness(vctx, builder, valToStore));
+		emitStoreMem(vctx, builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(vctx.getOCExit());
 	}
 
@@ -106,7 +106,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 		Value* theA = makeA(vctx.getLctx(), builder, yVal, zVal);
 		Value* valToStore = createStoreCast(vctx.getLctx(), builder, builder.CreateLShr(xVal, builder.getInt64(32)), false);
-		emitStoreMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, adjustEndianness(vctx, builder, valToStore));
+		emitStoreMem(vctx, builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(vctx.getOCExit());
 	}
 
@@ -118,7 +118,7 @@ namespace {
 		Value* zVal = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 		Value* theA = makeA(vctx.getLctx(), builder, yVal, zVal);
 		Value* valToStore = createStoreCast(vctx.getLctx(), builder, xVal, false);
-		emitStoreMem(vctx.getLctx(), vctx.getModule(), vctx.getFunction(), builder, theA, adjustEndianness(vctx, builder, valToStore));
+		emitStoreMem(vctx, builder, theA, adjustEndianness(vctx, builder, valToStore));
 		builder.CreateBr(vctx.getOCExit());
 	}
 

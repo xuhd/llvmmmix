@@ -59,6 +59,14 @@ void MmixHwImpl::postInit()
 		"Registers");
 	registersGlob->setAlignment(8);
 
+	GlobalVariable* registerStackTopGlob = new GlobalVariable(*_module,
+		PointerType::get(Type::getInt64Ty(_lctx), 0),
+		false,
+		GlobalValue::CommonLinkage,
+		0,
+		"RegisterStackTop");
+	registerStackTopGlob->setAlignment(8);
+
 	GlobalVariable* specialRegistersGlob = new GlobalVariable(*_module,
 		ArrayType::get(Type::getInt64Ty(_lctx), SPECIAL_REGISTERS),
 		false,
@@ -158,6 +166,8 @@ void MmixHwImpl::postInit()
 	_ee->addGlobalMapping(addressTranslateTableGlob, &_att[0]);
 	_handback[0] = this;
 	_ee->addGlobalMapping(thisRef, &_handback[0]);
+	_regStackTop[0] = &_registers[0];
+	_ee->addGlobalMapping(registerStackTopGlob, &_regStackTop[0]);
 }
 
 MXByte* MmixHwImpl::translateAddr(MXOcta addr, MXByte mask) {

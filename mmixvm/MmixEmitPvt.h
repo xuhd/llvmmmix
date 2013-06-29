@@ -23,13 +23,19 @@ namespace MmixLlvm {
 
 			virtual llvm::LLVMContext& getLctx() = 0;
 
-			virtual llvm::Module& getModule() = 0;
-
-			virtual llvm::Function& getFunction() = 0;
-
 			virtual llvm::BasicBlock *getOCEntry() = 0;
 
 			virtual llvm::BasicBlock *getOCExit() = 0;
+
+			virtual llvm::BasicBlock *makeBlock(const llvm::Twine& prefix) = 0;
+
+			virtual std::vector<llvm::Argument*> getVerticeArgs() = 0;
+
+			virtual llvm::Value *getModuleVar(const char* varName) = 0;
+
+			virtual llvm::Function* getModuleFunction(const char* funcName) = 0;
+
+			virtual llvm::Function* getIntrinsic(llvm::Intrinsic::ID id, llvm::ArrayRef<llvm::Type*> argTypes) = 0;
 
 			virtual llvm::Value *getRegister(MmixLlvm::MXByte reg) = 0;
 
@@ -62,11 +68,9 @@ namespace MmixLlvm {
 
 		extern llvm::Value* emitQueryArithFlag(VerticeContext& vctx, llvm::IRBuilder<>& builder, MmixLlvm::ArithFlag flag);
 
-		extern llvm::Value* emitFetchMem(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
-			llvm::IRBuilder<>& builder, llvm::Value* theA, llvm::Type* ty);
+		extern llvm::Value* emitFetchMem(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* theA, llvm::Type* ty);
 
-		extern void emitStoreMem(llvm::LLVMContext& ctx, llvm::Module& m, llvm::Function& f,
-			llvm::IRBuilder<>& builder, llvm::Value* theA, llvm::Value* val);
+		extern void emitStoreMem(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* theA, llvm::Value* val);
 
 		extern MXOcta getArithTripVector(MmixLlvm::ArithFlag flag);
 

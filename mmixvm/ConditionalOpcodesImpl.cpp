@@ -33,9 +33,9 @@ namespace {
 			MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 		{
 			LLVMContext& ctx = vctx.getLctx();
-			BasicBlock *condTrueBlock = BasicBlock::Create(ctx, genUniq("cond_true"), &vctx.getFunction());
-			BasicBlock *condFalseBlock = BasicBlock::Create(ctx, genUniq("cond_false"), &vctx.getFunction());
-			BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), &vctx.getFunction());
+			BasicBlock *condTrueBlock = vctx.makeBlock("cond_true");
+			BasicBlock *condFalseBlock = vctx.makeBlock("cond_false");
+			BasicBlock *epilogue = vctx.makeBlock("epilogue");
 			Value* yarg0 = vctx.getRegister(yarg);
 			Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 			Value* cond0 = typename Cond::emitCond(builder, yarg0);

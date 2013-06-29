@@ -148,8 +148,8 @@ void MmixLlvm::Private::emitSadd(VerticeContext& vctx, IRBuilder<>& builder,
 	MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	LLVMContext& ctx = vctx.getLctx();	
-	BasicBlock *loopEntry = BasicBlock::Create(ctx, genUniq("loop_entry"), &vctx.getFunction());
-	BasicBlock *loop = BasicBlock::Create(ctx, genUniq("loop"), &vctx.getFunction());
+	BasicBlock *loopEntry = vctx.makeBlock("loop_entry");
+	BasicBlock *loop = vctx.makeBlock("loop");
 	Value* yarg0 = vctx.getRegister( yarg);
 	Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 	Value* arg0 = builder.CreateAnd(yarg0, builder.CreateNot(zarg0));
@@ -207,7 +207,7 @@ void MmixLlvm::Private::emitMor(VerticeContext& vctx, IRBuilder<>& builder,
 		immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg),
 	};
 	Twine label = (immediate ? Twine("mor") : Twine("mori")) + Twine(yarg) + Twine(zarg);
-	Value* result = builder.CreateCall(vctx.getModule().getFunction("MorImpl"), ArrayRef<Value*>(callParams, callParams + 2));
+	Value* result = builder.CreateCall(vctx.getModuleFunction("MorImpl"), ArrayRef<Value*>(callParams, callParams + 2));
 	vctx.assignRegister(xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }
@@ -220,7 +220,7 @@ void MmixLlvm::Private::emitMxor(VerticeContext& vctx, IRBuilder<>& builder,
 		immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg),
 	};
 	Twine label = (immediate ? Twine("mxor") : Twine("mxori")) + Twine(yarg) + Twine(zarg);
-	Value* result = builder.CreateCall(vctx.getModule().getFunction("MxorImpl"), ArrayRef<Value*>(callParams, callParams + 2));
+	Value* result = builder.CreateCall(vctx.getModuleFunction("MxorImpl"), ArrayRef<Value*>(callParams, callParams + 2));
 	vctx.assignRegister(xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }

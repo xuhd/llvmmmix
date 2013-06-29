@@ -4,7 +4,7 @@
 #include <vector>
 #include <boost/tuple/tuple.hpp>
 #include <llvm/IR/IRBuilder.h>
-#include "MemAccess.h"
+#include "Engine.h"
 
 namespace MmixLlvm {
 	typedef std::vector<MXOcta> EdgeList;
@@ -17,6 +17,6 @@ namespace MmixLlvm {
 		llvm::Function* Function;
 	};
 
-	void emitSimpleVertice(llvm::LLVMContext& ctx, llvm::Module& m, MmixLlvm::MemAccessor& ma,
-		MXOcta xPtr, Vertice& out);
+	void emitSimpleVertice(llvm::LLVMContext& ctx, llvm::Module& m, 
+		MmixLlvm::Engine& e, MXOcta xPtr, Vertice& out);
 };

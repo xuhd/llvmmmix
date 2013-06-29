@@ -31,19 +31,17 @@ namespace {
 	{
 		LLVMContext& ctx = vctx.getLctx();
 		Type* intrinsicArgs[] = { Type::getInt64Ty(ctx) };
-		Function* intrinsic = llvm::Intrinsic::getDeclaration(&vctx.getModule(),
-			id, 
-			ArrayRef<Type*>(intrinsicArgs, intrinsicArgs + 1));
+		Function* intrinsic = vctx.getIntrinsic(id, ArrayRef<Type*>(intrinsicArgs, intrinsicArgs + 1));
 		Value* args[] = {
 			vctx.getRegister(yarg), 
 			immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg)
 		};
 		Value* resStruct = builder.CreateCall(intrinsic, ArrayRef<Value*>(args, args + 2));
-		BasicBlock *success = BasicBlock::Create(ctx, genUniq("success"), &vctx.getFunction());
-		BasicBlock *overflow = BasicBlock::Create(ctx, genUniq("overflow"), &vctx.getFunction());
-		BasicBlock *setOverflowFlag = BasicBlock::Create(ctx, genUniq("set_overflow_flag"), &vctx.getFunction());
-		BasicBlock *exitViaTrip = BasicBlock::Create(ctx, genUniq("exit_via_trip"), &vctx.getFunction());
-		BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), &vctx.getFunction());
+		BasicBlock *success = vctx.makeBlock("success");
+		BasicBlock *overflow = vctx.makeBlock("overflow");
+		BasicBlock *setOverflowFlag = vctx.makeBlock("set_overflow_flag");
+		BasicBlock *exitViaTrip = vctx.makeBlock("exit_via_trip");
+		BasicBlock *epilogue = vctx.makeBlock("epilogue");
 		MXTetra idx[1];
 		idx[0] = 1;
 		Value* initRaVal = vctx.getSpRegister(MmixLlvm::rA);
@@ -98,15 +96,15 @@ void MmixLlvm::Private::emitDiv(VerticeContext& vctx, IRBuilder<>& builder, MXBy
 	LLVMContext& ctx = vctx.getLctx();
 	Value* yarg0 = vctx.getRegister(yarg); 
 	Value* zarg0 = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
-	BasicBlock *success = BasicBlock::Create(ctx, genUniq("success"), &vctx.getFunction());
-	BasicBlock *keepPrecondOnError = BasicBlock::Create(ctx, genUniq("keep_precond_on_error"), &vctx.getFunction());
-	BasicBlock *overflow = BasicBlock::Create(ctx, genUniq("overflow"), &vctx.getFunction());
-	BasicBlock *divByZero = BasicBlock::Create(ctx, genUniq("div_by_zero"), &vctx.getFunction());
-	BasicBlock *setOverflowFlag = BasicBlock::Create(ctx, genUniq("set_overflow_flag"), &vctx.getFunction());
-	BasicBlock *setDivideByZeroFlag = BasicBlock::Create(ctx, genUniq("set_divide_by_zero_flag"), &vctx.getFunction());
-	BasicBlock *exitViaOverflowTrip = BasicBlock::Create(ctx, genUniq("exit_via_overflow_trip"), &vctx.getFunction());
-	BasicBlock *exitViaDivideByZeroTrip = BasicBlock::Create(ctx, genUniq("exit_via_divide_by_zero_trip"), &vctx.getFunction());
-	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), &vctx.getFunction());
+	BasicBlock *success = vctx.makeBlock("success");
+	BasicBlock *keepPrecondOnError = vctx.makeBlock("keep_precond_on_error");
+	BasicBlock *overflow = vctx.makeBlock("overflow");
+	BasicBlock *divByZero = vctx.makeBlock("div_by_zero");
+	BasicBlock *setOverflowFlag = vctx.makeBlock("set_overflow_flag");
+	BasicBlock *setDivideByZeroFlag = vctx.makeBlock("set_divide_by_zero_flag");
+	BasicBlock *exitViaOverflowTrip = vctx.makeBlock("exit_via_overflow_trip");
+	BasicBlock *exitViaDivideByZeroTrip = vctx.makeBlock("exit_via_divide_by_zero_trip");
+	BasicBlock *epilogue = vctx.makeBlock("epilogue");
 	Value* initRaVal = vctx.getSpRegister(rA);
 	Value* overflowFlag = builder.CreateAnd(builder.CreateICmpEQ(yarg0, builder.getInt64(~0i64)), 
 		builder.CreateICmpEQ(zarg0, builder.getInt64(-1i64)));
@@ -235,7 +233,7 @@ void MmixLlvm::Private::emitMulu(VerticeContext& vctx, IRBuilder<>& builder,
 		loProd
 	};
 	Twine label = (immediate ? Twine("mulu") : Twine("mului")) + Twine(yarg) + Twine(zarg);
-	builder.CreateCall(vctx.getModule().getFunction("MuluImpl"), ArrayRef<Value*>(callParams, callParams + 4));
+	builder.CreateCall(vctx.getModuleFunction("MuluImpl"), ArrayRef<Value*>(callParams, callParams + 4));
 	Value* xval0 = builder.CreateLoad(loProd, false, label);
 	Value* rh = builder.CreateLoad(hiProd);
 	vctx.assignRegister(xarg, xval0);
@@ -247,9 +245,9 @@ void MmixLlvm::Private::emitDivu(VerticeContext& vctx, IRBuilder<>& builder,
 	MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	LLVMContext& ctx = vctx.getLctx();
-	BasicBlock *simpleCase = BasicBlock::Create(ctx, genUniq("simple_case"), &vctx.getFunction());
-	BasicBlock *fullCase = BasicBlock::Create(ctx, genUniq("full_case"), &vctx.getFunction());
-	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), &vctx.getFunction());
+	BasicBlock *simpleCase = vctx.makeBlock("simple_case");
+	BasicBlock *fullCase = vctx.makeBlock("full_case");
+	BasicBlock *epilogue = vctx.makeBlock("epilogue");
 	Value* yreg = vctx.getRegister( yarg);
 	Value* rd = vctx.getSpRegister(MmixLlvm::rD);
 	Value* zreg = immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg);
@@ -265,7 +263,7 @@ void MmixLlvm::Private::emitDivu(VerticeContext& vctx, IRBuilder<>& builder,
 	};
 	Twine labelq = (immediate ? Twine("divu_q") : Twine("divui_q")) + Twine(yarg) + Twine(zarg);
 	Twine labelr = (immediate ? Twine("divu_r") : Twine("divui_r")) + Twine(yarg) + Twine(zarg);
-	builder.CreateCall(vctx.getModule().getFunction("DivuImpl"), ArrayRef<Value*>(callParams, callParams + 5));
+	builder.CreateCall(vctx.getModuleFunction("DivuImpl"), ArrayRef<Value*>(callParams, callParams + 5));
 	Value* quotient = builder.CreateLoad(quotPtr, labelq);
 	Value* remainder = builder.CreateLoad(remPtr, labelr);
 	builder.CreateBr(epilogue);
@@ -305,10 +303,10 @@ void MmixLlvm::Private::emitSr(VerticeContext& vctx, IRBuilder<>& builder,
 	MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	LLVMContext& ctx = vctx.getLctx();
-	BasicBlock *yPositiveBlock = BasicBlock::Create(ctx, genUniq("y_positive"), &vctx.getFunction());
-	BasicBlock *yNegativeBlock = BasicBlock::Create(ctx, genUniq("y_negative"), &vctx.getFunction());
-	BasicBlock *yDefBlock = BasicBlock::Create(ctx, genUniq("y_def"), &vctx.getFunction());
-	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), &vctx.getFunction());
+	BasicBlock *yPositiveBlock = vctx.makeBlock("y_positive");
+	BasicBlock *yNegativeBlock = vctx.makeBlock("y_negative");
+	BasicBlock *yDefBlock = vctx.makeBlock("y_def");
+	BasicBlock *epilogue = vctx.makeBlock("epilogue");
 	Value* yarg0 = vctx.getRegister(yarg);
 	Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg);
 	Value* yIsPositive = builder.CreateICmpSGE(yarg0, builder.getInt64(0));
@@ -341,17 +339,17 @@ void MmixLlvm::Private::emitSl(VerticeContext& vctx, IRBuilder<>& builder,
 	MXByte xarg, MXByte yarg, MXByte zarg, bool immediate)
 {
 	LLVMContext& ctx = vctx.getLctx();	
-	BasicBlock *maskBlock0 = BasicBlock::Create(ctx, genUniq("mask_block_0"), &vctx.getFunction());
-	BasicBlock *maskBlock1 = BasicBlock::Create(ctx, genUniq("mask_block_1"), &vctx.getFunction());
-	BasicBlock *maskDef = BasicBlock::Create(ctx, genUniq("mask_def"), &vctx.getFunction());
-	BasicBlock *yPositive = BasicBlock::Create(ctx, genUniq("y_positive"), &vctx.getFunction());
-	BasicBlock *yNegative = BasicBlock::Create(ctx, genUniq("y_negative"), &vctx.getFunction());
-	BasicBlock *yDef = BasicBlock::Create(ctx, genUniq("y_def"), &vctx.getFunction());
-	BasicBlock *successBlock = BasicBlock::Create(ctx, genUniq("success"), &vctx.getFunction());
-	BasicBlock *overflowBlock = BasicBlock::Create(ctx, genUniq("overflow"), &vctx.getFunction());
-	BasicBlock *setOverflowFlag = BasicBlock::Create(ctx, genUniq("set_overflow_flag"), &vctx.getFunction());
-	BasicBlock *exitViaOverflowTrip = BasicBlock::Create(ctx, genUniq("exit_via_overflow_trip"), &vctx.getFunction());
-	BasicBlock *epilogue = BasicBlock::Create(ctx, genUniq("epilogue"), &vctx.getFunction());
+	BasicBlock *maskBlock0 = vctx.makeBlock("mask_block_0");
+	BasicBlock *maskBlock1 = vctx.makeBlock("mask_block_1");
+	BasicBlock *maskDef = vctx.makeBlock("mask_def");
+	BasicBlock *yPositive = vctx.makeBlock("y_positive");
+	BasicBlock *yNegative = vctx.makeBlock("y_negative");
+	BasicBlock *yDef = vctx.makeBlock("y_def");
+	BasicBlock *successBlock = vctx.makeBlock("success");
+	BasicBlock *overflowBlock = vctx.makeBlock("overflow");
+	BasicBlock *setOverflowFlag = vctx.makeBlock("set_overflow_flag");
+	BasicBlock *exitViaOverflowTrip = vctx.makeBlock("exit_via_overflow_trip");
+	BasicBlock *epilogue = vctx.makeBlock("epilogue");
 	Value* yarg0 = vctx.getRegister( yarg);
 	Value* zarg0 = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 	Value* b0 = builder.CreateICmpULT(zarg0, builder.getInt64(63));
