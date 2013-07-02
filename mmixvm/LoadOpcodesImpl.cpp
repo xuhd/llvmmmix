@@ -17,8 +17,6 @@ using llvm::cast;
 
 using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
-using MmixLlvm::Private::RegisterRecord;
-using MmixLlvm::Private::RegistersMap;
 using MmixLlvm::MXByte;
 
 namespace {
@@ -42,7 +40,7 @@ namespace {
 		Value* theA = makeA(vctx, builder, yVal, zVal);
 		Value* readVal = emitFetchMem(vctx, builder, theA);
 		Value* result = emitLoad(vctx, builder, readVal, isSigned);
-		vctx.assignRegister(xarg, result);
+		assignRegister(vctx, builder, xarg, result);
 		builder.CreateBr(vctx.getOCExit());
 	}
 
@@ -54,7 +52,7 @@ namespace {
 		Value* theA = makeA(vctx, builder, yVal, zVal);
 		Value* readVal = emitFetchMem(vctx, builder, theA);
 		Value* result = builder.CreateShl(emitLoad(vctx, builder, readVal, false), builder.getInt64(32));
-		vctx.assignRegister(xarg, result);
+		assignRegister(vctx, builder, xarg, result);
 		builder.CreateBr(vctx.getOCExit());
 	}
 
@@ -171,14 +169,14 @@ void MmixLlvm::Private::emitGet(VerticeContext& vctx, IRBuilder<>& builder,
 	MXByte xarg, MXByte zarg)
 {
 	Value* val = vctx.getSpRegister((MmixLlvm::SpecialReg)zarg);
-	vctx.assignRegister(xarg, val);
+	assignRegister(vctx, builder, xarg, val);
 	builder.CreateBr(vctx.getOCExit());
 }
 		
 void MmixLlvm::Private::emitPut(VerticeContext& vctx, IRBuilder<>& builder,
 	MXByte xarg, MXByte zarg, bool immediate)
 {
-	Value* val = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
+	Value* val = immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg);
 	vctx.assignSpRegister((SpecialReg)xarg, val);
 	builder.CreateBr(vctx.getOCExit());
 }
@@ -191,6 +189,6 @@ void MmixLlvm::Private::emitGeta(VerticeContext& vctx, IRBuilder<>& builder,
 		m = builder.getInt64(vctx.getXPtr() + (yzarg << 2));
 	else
 		m = builder.getInt64(vctx.getXPtr() - (yzarg << 2));
-	vctx.assignRegister(xarg, m);
+	assignRegister(vctx, builder, xarg, m);
 	builder.CreateBr(vctx.getOCExit());
 }

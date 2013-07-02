@@ -3,68 +3,15 @@
 #include <stdint.h>
 #include "MmixEmit.h"
 #include "MmixDef.h"
+#include "VerticeContext.h"
 
 namespace MmixLlvm {
 	namespace Private {
-		struct RegisterRecord {
-			llvm::Value* value;
-
-			bool changed;
-		};
-
-		typedef boost::unordered_map<MXByte, RegisterRecord> RegistersMap;
-
-		struct VerticeContext {
-			virtual void feedNewOpcode(MXOcta xptr, MXTetra opcode, bool term) = 0;
-
-			virtual MXTetra getInstr() = 0;
-
-			virtual MXOcta getXPtr() = 0;
-
-			virtual llvm::LLVMContext& getLctx() = 0;
-
-			virtual llvm::BasicBlock *getOCEntry() = 0;
-
-			virtual llvm::BasicBlock *getOCExit() = 0;
-
-			virtual llvm::BasicBlock *makeBlock(const llvm::Twine& prefix) = 0;
-
-			virtual std::vector<llvm::Argument*> getVerticeArgs() = 0;
-
-			virtual llvm::Value *getModuleVar(const char* varName) = 0;
-
-			virtual llvm::Function* getModuleFunction(const char* funcName) = 0;
-
-			virtual llvm::Function* getIntrinsic(llvm::Intrinsic::ID id, llvm::ArrayRef<llvm::Type*> argTypes) = 0;
-
-			virtual llvm::Value *getRegister(MmixLlvm::MXByte reg) = 0;
-
-			virtual llvm::Value *getSpRegister(MmixLlvm::SpecialReg reg) = 0;
-
-			virtual void assignRegister(MmixLlvm::MXByte reg, llvm::Value* val) = 0;
-
-			virtual void assignSpRegister(MmixLlvm::SpecialReg reg, llvm::Value* val) = 0;
-
-			virtual std::vector<MXByte> getDirtyRegisters() = 0;
-
-			virtual std::vector<SpecialReg> getDirtySpRegisters() = 0;
-
-			virtual void markAllClean() = 0;
-
-			virtual boost::shared_ptr<VerticeContext> makeBranch() = 0;
-
-			virtual ~VerticeContext() = 0;
-		};
-
 		extern llvm::Value* emitAdjust64Endianness(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* val);
 
 		extern llvm::Value* emitAdjust32Endianness(VerticeContext& vctx,  llvm::IRBuilder<>& builder, llvm::Value* val);
 		
 		extern llvm::Value* emitAdjust16Endianness(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* val);
-
-		//extern llvm::Value* emitRegisterLoad(VerticeContext& vctx, IRBuilder<>& builder, llvm::IRBuilder<>& builder, MXByte reg);
-
-		//extern llvm::Value* emitSpecialRegisterLoad(VerticeContext& vctx, IRBuilder<>& builder, llvm::IRBuilder<>& builder, MmixLlvm::SpecialReg sreg);
 
 		extern llvm::Value* emitQueryArithFlag(VerticeContext& vctx, llvm::IRBuilder<>& builder, MmixLlvm::ArithFlag flag);
 
@@ -74,21 +21,24 @@ namespace MmixLlvm {
 
 		extern MXOcta getArithTripVector(MmixLlvm::ArithFlag flag);
 
-		//extern void addRegisterToCache(VerticeContext& vctx, IRBuilder<>& builder, MXByte reg, llvm::Value* val, bool markDirty);
-
-		//extern void addSpecialRegisterToCache(VerticeContext& vctx, IRBuilder<>& builder, MXByte reg, llvm::Value* val, bool markDirty);
-
 		extern void emitLeaveVerticeViaTrip(VerticeContext& vctx, llvm::IRBuilder<>& builder,
 			llvm::Value* rY, llvm::Value* rZ, MXOcta target);
 
-		//extern void emitLeaveVerticeViaTrap(VerticeContext& vctx, llvm::IRBuilder<>& builder,
-		//	llvm::Value* rY, llvm::Value* rZ);
-
-	//	extern void saveRegisters(VerticeContext& vctx, llvm::IRBuilder<>& builder, RegistersMap& regMap, RegistersMap& sregMap);
+		extern void assignRegister(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXByte reg, llvm::Value* value);
 
 		extern void flushRegistersCache(VerticeContext& vctx, llvm::IRBuilder<>& builder);
 
+		extern void emitInstruction(VerticeContext& vctx, llvm::IRBuilder<>& builder);
+
 		extern void emitLeaveVerticeViaJump(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXOcta target);
+
+		extern void emitLeaveVerticeViaIndirectJump(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* target);
+
+		extern void emitPushRegsAndLeaveVerticeViaJump(VerticeContext&vctx, MXByte xarg, llvm::IRBuilder<>& builder, MXOcta target);
+
+		extern void emitPushRegsAndLeaveVerticeViaIndirectJump(VerticeContext&vctx, MXByte xarg, llvm::IRBuilder<>& builder, llvm::Value* target);
+
+		extern void emitLeaveVerticeViaPop(VerticeContext& vctx, llvm::IRBuilder<>& builder, llvm::Value* retainLocalRegs, llvm::Value* target);
 
 		extern void emitLdo(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg);
 
@@ -285,6 +235,14 @@ namespace MmixLlvm {
 		extern void emitGeta(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXByte xarg, MXWyde yzarg, bool backward);
 
 		extern void emitJmp(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXTetra xyzarg, bool backward);
+
+		extern void emitPushj(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXByte xarg, MXTetra yzarg, bool backward);
+
+		extern void emitPop(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXByte xarg, MXTetra yzarg);
+
+		extern void emitGo(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
+
+		extern void emitPushgo(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg, bool immediate);
 
 		extern void emitBn(VerticeContext& vctx, llvm::IRBuilder<>& builder, MXByte xarg, MXTetra yzarg, bool backward);
 

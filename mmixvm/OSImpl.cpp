@@ -154,6 +154,7 @@ void OSImpl::readSection(Engine& e, std::istream& stream, bool& isGreg, MXOcta& 
 			size = 0;
 			stream.read((char*)buff, 8);
 			MXOcta lastGreg = MmixLlvm::Util::adjust64Endianness(ArrayRef<MXByte>(buff, buff + 8));
+			e.setSpReg(MmixLlvm::rG, lastGreg);
 			size_t s0 = 16 + (255 - lastGreg) * 8;
 			size_t tail = s0 % SECTION_ALIGN;
 			size_t alignedSectionSize = s0 + (tail > 0 ? (SECTION_ALIGN - tail) : 0);

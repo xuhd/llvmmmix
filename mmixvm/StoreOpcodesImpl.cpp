@@ -18,8 +18,8 @@ using llvm::cast;
 
 using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
-using MmixLlvm::Private::RegisterRecord;
-using MmixLlvm::Private::RegistersMap;
+//using MmixLlvm::Private::RegisterRecord;
+//using MmixLlvm::Private::RegistersMap;
 using MmixLlvm::MXByte;
 
 namespace {

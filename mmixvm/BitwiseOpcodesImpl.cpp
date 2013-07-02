@@ -20,8 +20,8 @@ using llvm::Intrinsic::ID;
 
 using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
-using MmixLlvm::Private::RegisterRecord;
-using MmixLlvm::Private::RegistersMap;
+//using MmixLlvm::Private::RegisterRecord;
+//using MmixLlvm::Private::RegistersMap;
 using MmixLlvm::MXByte;
 
 namespace {
@@ -37,7 +37,7 @@ namespace {
 			Value* yarg0 = vctx.getRegister( yarg);
 			Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 			Value* result = typename BitOp::emitBitOp(vctx, builder, yarg0, zarg0);
-			vctx.assignRegister(xarg, result);
+			assignRegister(vctx, builder, xarg, result);
 			builder.CreateBr(vctx.getOCExit());
 		}
 };
@@ -170,7 +170,7 @@ void MmixLlvm::Private::emitSadd(VerticeContext& vctx, IRBuilder<>& builder,
 	counter->addIncoming(nextCounter, loop);
 	var->addIncoming(nextVar, loop);
 	result->addIncoming(nextResult, loop);
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(loopEntry);
 }
 
@@ -208,7 +208,7 @@ void MmixLlvm::Private::emitMor(VerticeContext& vctx, IRBuilder<>& builder,
 	};
 	Twine label = (immediate ? Twine("mor") : Twine("mori")) + Twine(yarg) + Twine(zarg);
 	Value* result = builder.CreateCall(vctx.getModuleFunction("MorImpl"), ArrayRef<Value*>(callParams, callParams + 2));
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -221,7 +221,7 @@ void MmixLlvm::Private::emitMxor(VerticeContext& vctx, IRBuilder<>& builder,
 	};
 	Twine label = (immediate ? Twine("mxor") : Twine("mxori")) + Twine(yarg) + Twine(zarg);
 	Value* result = builder.CreateCall(vctx.getModuleFunction("MxorImpl"), ArrayRef<Value*>(callParams, callParams + 2));
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -283,5 +283,5 @@ void MmixLlvm::Private::emitMxor(VerticeContext& vctx, IRBuilder<>& builder,
 	i->addIncoming(newI, loop0Cont);
 	builder.CreateCondBr(builder.CreateICmpULT(newI, builder.getInt64(8LL)), loop0, epilogue);
 	builder.SetInsertPoint(epilogue);
-	vctx.assignRegister(xarg, newRetVal);
+	assignRegister(vctx, builder, xarg, newRetVal);
 	builder.CreateBr(vctx.getOCExit());*/

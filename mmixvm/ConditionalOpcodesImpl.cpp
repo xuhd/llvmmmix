@@ -18,8 +18,6 @@ using llvm::cast;
 
 using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
-using MmixLlvm::Private::RegisterRecord;
-using MmixLlvm::Private::RegistersMap;
 using MmixLlvm::MXByte;
 
 namespace {
@@ -49,7 +47,7 @@ namespace {
 			PHINode* result = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 			result->addIncoming(zarg0, condTrueBlock);
 			result->addIncoming(defXval, condFalseBlock);
-			vctx.assignRegister(xarg, result);
+			assignRegister(vctx, builder, xarg, result);
 			builder.CreateBr(vctx.getOCExit());
 		}
 };

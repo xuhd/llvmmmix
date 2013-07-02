@@ -59,6 +59,15 @@ void MmixHwImpl::postInit()
 		"Registers");
 	registersGlob->setAlignment(8);
 
+	GlobalVariable* registerStackBaseGlob = new GlobalVariable(*_module,
+		PointerType::get(Type::getInt64Ty(_lctx), 0),
+		false,
+		GlobalValue::CommonLinkage,
+		0,
+		"RegisterStackBase");
+	registerStackBaseGlob->setAlignment(8);
+
+
 	GlobalVariable* registerStackTopGlob = new GlobalVariable(*_module,
 		PointerType::get(Type::getInt64Ty(_lctx), 0),
 		false,
@@ -140,6 +149,22 @@ void MmixHwImpl::postInit()
 		FunctionType::get(Type::getInt64Ty(_lctx), ArrayRef<Type*>(params, params + 3), false), 
 		Function::ExternalLinkage, "TrapHandler", _module);
 
+	/* static void pushRegStack0(void* handback, MXOcta count, MXOcta rL);*/
+	params[0] = Type::getInt32PtrTy(_lctx);
+	params[1] = Type::getInt64Ty(_lctx);
+	params[2] = Type::getInt64Ty(_lctx);
+	llvm::Function* pushRegStackImplF = llvm::Function::Create(
+		FunctionType::get(Type::getInt64Ty(_lctx), ArrayRef<Type*>(params, params + 3), false), 
+		Function::ExternalLinkage, "PushRegStack", _module);
+
+	/* static void popRegStack0(void* handback, MXOcta count, MXOcta* rL);*/
+	params[0] = Type::getInt32PtrTy(_lctx);
+	params[1] = Type::getInt64Ty(_lctx);
+	params[2] = Type::getInt64PtrTy(_lctx);
+	llvm::Function* popRegStackImplF = llvm::Function::Create(
+		FunctionType::get(Type::getInt64Ty(_lctx), ArrayRef<Type*>(params, params + 3), false), 
+		Function::ExternalLinkage, "PopRegStack", _module);
+
 	params[0] = Type::getInt32Ty(_lctx);
 	llvm::Function* debugInt32 = llvm::Function::Create(
 		FunctionType::get(Type::getVoidTy(_lctx), ArrayRef<Type*>(params, params + 1), false), 
@@ -160,6 +185,8 @@ void MmixHwImpl::postInit()
 	_ee->addGlobalMapping(debugInt32, &MmixHwImpl::debugInt32);
 	_ee->addGlobalMapping(debugInt64, &MmixHwImpl::debugInt64);
 	_ee->addGlobalMapping(trapHandlerF, &MmixHwImpl::trapHandlerImpl);
+	_ee->addGlobalMapping(pushRegStackImplF, &MmixHwImpl::pushRegStack0);
+	_ee->addGlobalMapping(popRegStackImplF, &MmixHwImpl::popRegStack0);
 	_ee->addGlobalMapping(registersGlob, &_registers[0]);
 	_ee->addGlobalMapping(specialRegistersGlob, &_spRegisters[0]);
 	_ee->addGlobalMapping(memGlob, &_memory[0]);
@@ -168,6 +195,8 @@ void MmixHwImpl::postInit()
 	_ee->addGlobalMapping(thisRef, &_handback[0]);
 	_regStackTop[0] = &_registers[0];
 	_ee->addGlobalMapping(registerStackTopGlob, &_regStackTop[0]);
+	_regStackBase[0] = &_registers[0];
+	_ee->addGlobalMapping(registerStackBaseGlob, &_regStackBase[0]);
 }
 
 MXByte* MmixHwImpl::translateAddr(MXOcta addr, MXByte mask) {
@@ -227,6 +256,29 @@ MXOcta MmixHwImpl::adjust64EndiannessImpl(MXOcta arg) {
 MXOcta MmixHwImpl::trapHandlerImpl(void* handback, MXOcta instr, MXOcta vector) {
 	MmixHwImpl* this__ = static_cast<MmixHwImpl*>(handback);
 	return this__->_os->handleTrap(*this__, instr, vector);
+}
+
+void MmixHwImpl::pushRegStack0(void* handback, MXOcta count, MXOcta rL) {
+	static_cast<MmixHwImpl*>(handback)->pushRegStack(count, rL);
+}
+
+void MmixHwImpl::pushRegStack(MXOcta count, MXOcta rL) {
+	RegStackEntry e0;
+	e0.TopRef = _regStackTop[0];
+	e0.rL = rL;
+	_regStack.push(e0);
+	_regStackTop[0] += count;
+}
+
+void MmixHwImpl::popRegStack0(void* handback, MXOcta count, MXOcta* rL) {
+	static_cast<MmixHwImpl*>(handback)->popRegStack(count, rL);
+}
+
+void MmixHwImpl::popRegStack(MXOcta count, MXOcta* rL) {
+	RegStackEntry e0 = _regStack.top();
+	*rL = e0.rL + count;
+	_regStackTop[0] = e0.TopRef;
+	_regStack.pop();
 }
 
 MXOcta MmixHwImpl::morImpl(MXOcta y, MXOcta z) {

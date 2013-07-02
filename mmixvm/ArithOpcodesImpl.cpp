@@ -20,8 +20,8 @@ using llvm::Intrinsic::ID;
 
 using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
-using MmixLlvm::Private::RegisterRecord;
-using MmixLlvm::Private::RegistersMap;
+//using MmixLlvm::Private::RegisterRecord;
+//using MmixLlvm::Private::RegistersMap;
 using MmixLlvm::MXByte;
 using MmixLlvm::MXTetra;
 
@@ -70,7 +70,7 @@ namespace {
 		PHINode* ra = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 		ra->addIncoming(initRaVal, success);
 		ra->addIncoming(newRaVal, setOverflowFlag);
-		vctx.assignRegister(xarg, result);
+		assignRegister(vctx, builder, xarg, result);
 		vctx.assignSpRegister(MmixLlvm::rA, ra);
 		builder.CreateBr(vctx.getOCExit());
 	}
@@ -153,7 +153,7 @@ void MmixLlvm::Private::emitDiv(VerticeContext& vctx, IRBuilder<>& builder, MXBy
 	newRa->addIncoming(initRaVal, success);
 	newRa->addIncoming(overflowRaVal, setOverflowFlag);
 	newRa->addIncoming(divideByZeroRaVal, setDivideByZeroFlag);
-	vctx.assignRegister(xarg, quotResult);
+	assignRegister(vctx, builder, xarg, quotResult);
 	vctx.assignSpRegister(MmixLlvm::rA, newRa);
 	vctx.assignSpRegister(MmixLlvm::rR, remResult);
 	builder.CreateBr(vctx.getOCExit());
@@ -180,7 +180,7 @@ namespace {
 		Value* zarg0 = immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg);
 		Twine label = Twine(1<<Pow2) + (immediate ? Twine("addui") : Twine("addu")) + Twine(yarg) + Twine(zarg);
 		Value* result = emitAdd(builder, yarg0, zarg0, label);
-		vctx.assignRegister(xarg, result);
+		assignRegister(vctx, builder, xarg, result);
 		builder.CreateBr(vctx.getOCExit());
 	}
 };
@@ -216,7 +216,7 @@ void MmixLlvm::Private::emitSubu(VerticeContext& vctx, IRBuilder<>& builder, MXB
 	Value* zarg0 = immediate ? builder.getInt64(zarg) : vctx.getRegister( zarg);
 	Twine label = (immediate ? Twine("subu") : Twine("subui")) + Twine(yarg) + Twine(zarg);
 	Value* result = builder.CreateSub(yarg0, zarg0, label);
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -236,7 +236,7 @@ void MmixLlvm::Private::emitMulu(VerticeContext& vctx, IRBuilder<>& builder,
 	builder.CreateCall(vctx.getModuleFunction("MuluImpl"), ArrayRef<Value*>(callParams, callParams + 4));
 	Value* xval0 = builder.CreateLoad(loProd, false, label);
 	Value* rh = builder.CreateLoad(hiProd);
-	vctx.assignRegister(xarg, xval0);
+	assignRegister(vctx, builder, xarg, xval0);
 	vctx.assignSpRegister(MmixLlvm::rH, rh);
 	builder.CreateBr(vctx.getOCExit());
 }
@@ -274,7 +274,7 @@ void MmixLlvm::Private::emitDivu(VerticeContext& vctx, IRBuilder<>& builder,
 	PHINode* remResult = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 	remResult->addIncoming(remainder, fullCase);
 	remResult->addIncoming(yreg, simpleCase);
-	vctx.assignRegister(xarg, quotResult);
+	assignRegister(vctx, builder, xarg, quotResult);
 	vctx.assignSpRegister(MmixLlvm::rR, remResult);
 	builder.CreateBr(vctx.getOCExit());
 }
@@ -285,7 +285,7 @@ void MmixLlvm::Private::emitNeg(VerticeContext& vctx, IRBuilder<>& builder,
 	Value* yarg0 = builder.getInt64(yarg);
 	Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg);
 	Value* xval0 = builder.CreateSub(yarg0, zarg0);
-	vctx.assignRegister(xarg, xval0);
+	assignRegister(vctx, builder, xarg, xval0);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -295,7 +295,7 @@ void MmixLlvm::Private::emitNegu(VerticeContext& vctx, IRBuilder<>& builder,
 	Value* yarg0 = builder.getInt64(yarg);
 	Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg);
 	Value* xval0 = builder.CreateSub(yarg0, zarg0);
-	vctx.assignRegister(xarg, xval0);
+	assignRegister(vctx, builder, xarg, xval0);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -321,7 +321,7 @@ void MmixLlvm::Private::emitSr(VerticeContext& vctx, IRBuilder<>& builder,
 	mask->addIncoming(builder.getInt64(0), yPositiveBlock);
 	mask->addIncoming(mask0, yNegativeBlock);
 	Value* result = builder.CreateOr(builder.CreateLShr(yarg0, zarg0), mask);
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -331,7 +331,7 @@ void MmixLlvm::Private::emitSru(VerticeContext& vctx, IRBuilder<>& builder,
 	Value* yarg0 = vctx.getRegister( yarg);
 	Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg);
 	Value* result = builder.CreateLShr(yarg0, zarg0);
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -404,7 +404,7 @@ void MmixLlvm::Private::emitSl(VerticeContext& vctx, IRBuilder<>& builder,
 	PHINode* newRa = builder.CreatePHI(Type::getInt64Ty(ctx), 0);
 	newRa->addIncoming(initRaVal, successBlock);
 	newRa->addIncoming(overflowRaVal, setOverflowFlag);
-	vctx.assignRegister(xarg, shlResult);
+	assignRegister(vctx, builder, xarg, shlResult);
 	vctx.assignSpRegister(MmixLlvm::rA, newRa);
 	builder.CreateBr(vctx.getOCExit());
 }
@@ -415,7 +415,7 @@ void MmixLlvm::Private::emitSlu(VerticeContext& vctx, IRBuilder<>& builder,
 	Value* yarg0 = vctx.getRegister(yarg);
 	Value* zarg0 =  immediate ? builder.getInt64(zarg) : vctx.getRegister(zarg);
 	Value* result = builder.CreateShl(yarg0, zarg0);
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -428,7 +428,7 @@ void MmixLlvm::Private::emitCmp(VerticeContext& vctx, IRBuilder<>& builder,
 	Value* val0 = builder.CreateIntCast(builder.CreateICmpSGT(yarg0, zarg0), Type::getInt64Ty(ctx), false);
 	Value* val1 = builder.CreateIntCast(builder.CreateICmpSLT(yarg0, zarg0), Type::getInt64Ty(ctx), false);
 	Value* result = builder.CreateSub(val0, val1);
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }
 
@@ -441,6 +441,6 @@ void MmixLlvm::Private::emitCmpu(VerticeContext& vctx, IRBuilder<>& builder,
 	Value* val0 = builder.CreateIntCast(builder.CreateICmpUGT(yarg0, zarg0), Type::getInt64Ty(ctx), false);
 	Value* val1 = builder.CreateIntCast(builder.CreateICmpULT(yarg0, zarg0), Type::getInt64Ty(ctx), false);
 	Value* result = builder.CreateSub(val0, val1);
-	vctx.assignRegister(xarg, result);
+	assignRegister(vctx, builder, xarg, result);
 	builder.CreateBr(vctx.getOCExit());
 }

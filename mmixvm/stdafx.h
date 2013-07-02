@@ -12,6 +12,7 @@
 #include <gmpxx.h>
 #include <limits.h>
 #include <vector>
+#include <stack>
 #include <sstream>
 #include <fstream>
 #include <iterator>

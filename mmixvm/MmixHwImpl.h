@@ -19,6 +19,8 @@ namespace MmixLlvm {
 
 		MXOcta* _regStackTop[1];
 
+		MXOcta* _regStackBase[1];
+
 		std::vector<MXOcta> _registers;
 
 		std::vector<MXOcta> _spRegisters;
@@ -26,6 +28,14 @@ namespace MmixLlvm {
 		std::vector<MXByte> _memory;
 
 		std::vector<MXTetra> _att;
+
+		struct RegStackEntry {
+			MXOcta rL;
+
+			MXOcta* TopRef;
+		};
+
+		std::stack<RegStackEntry> _regStack;
 
 		llvm::Module* _module;
 
@@ -62,6 +72,14 @@ namespace MmixLlvm {
 		static MXOcta trapHandlerImpl(void* handback, MXOcta instr, MXOcta vector);
 
 		static MXOcta adjust64EndiannessImpl(MXOcta arg);
+
+		static void pushRegStack0(void* handback, MXOcta count, MXOcta rL);
+
+		void pushRegStack(MXOcta count, MXOcta rL);
+
+		static void popRegStack0(void* handback, MXOcta count, MXOcta* rL);
+
+		void popRegStack(MXOcta count, MXOcta* rL);
 	public:
 		static boost::shared_ptr<MmixHwImpl> create(const HardwareCfg& hwCfg, boost::shared_ptr<OS> os);
 

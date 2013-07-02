@@ -5,6 +5,7 @@
 #include "MemAccess.h"
 #include "RegAccess.h"
 #include "OS.h"
+#include "VerticeContext.h"
 #include "MmixDef.h"
 
 using llvm::Twine;
@@ -61,3 +62,5 @@ MmixLlvm::RegAccessor::~RegAccessor() { }
 MmixLlvm::Engine::~Engine() { }
 
 MmixLlvm::OS::~OS() { }
+
+MmixLlvm::Private::VerticeContext::~VerticeContext() { }

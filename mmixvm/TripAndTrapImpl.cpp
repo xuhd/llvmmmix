@@ -22,8 +22,8 @@ using llvm::Intrinsic::ID;
 
 using namespace MmixLlvm::Util;
 using namespace MmixLlvm::Private;
-using MmixLlvm::Private::RegisterRecord;
-using MmixLlvm::Private::RegistersMap;
+//using MmixLlvm::Private::RegisterRecord;
+//using MmixLlvm::Private::RegistersMap;
 
 void MmixLlvm::Private::emitTrip(VerticeContext& vctx, IRBuilder<>& builder, MXByte xarg, MXByte yarg, MXByte zarg)
 {
@@ -45,7 +45,8 @@ void MmixLlvm::Private::emitTrap(VerticeContext& vctx, IRBuilder<>& builder, MXB
 	vctx.assignSpRegister(MmixLlvm::rBB, r255);
 	Value* rJ = vctx.getSpRegister(MmixLlvm::rJ);
 	//addRegisterToCache(vctx, 255, rJ, true);
-	vctx.assignRegister(255, rJ);
+	//vctx.assignRegister(255, rJ);
+	assignRegister(vctx, builder, xarg, rJ);
 	vctx.assignSpRegister(MmixLlvm::rXX,
 		builder.CreateOr(builder.CreateShl(builder.getInt64(1), 63), builder.getInt64(vctx.getInstr())));
 	vctx.assignSpRegister(MmixLlvm::rYY, builder.getInt64(yarg));
